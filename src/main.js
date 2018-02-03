@@ -31,8 +31,9 @@ function pipe(rest, newFn) {
 function createInstance(gates) {
   return {
     pipe: pipe.bind(null, gates),
-    exec: exec.bind(null, gates),
     split: split.bind(null, gates),
+    start: exec.bind(null, gates),
+    // TODO: filter()
   };
 }
 
