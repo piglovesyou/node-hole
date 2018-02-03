@@ -1,4 +1,4 @@
-# Hole
+# Hole [![Build Status](https://travis-ci.org/piglovesyou/node-hole.svg?branch=master)](https://travis-ci.org/piglovesyou/node-hole)
 Async friendly stream utility of Node.js
 
 # Usage
