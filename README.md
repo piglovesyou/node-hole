@@ -1,4 +1,4 @@
-# Hole [![Build Status](https://travis-ci.org/piglovesyou/node-hole.svg?branch=master)](https://travis-ci.org/piglovesyou/node-hole)
+# Hole [![Build Status](https://travis-ci.org/piglovesyou/node-hole.svg?branch=master)](https://travis-ci.org/piglovesyou/node-hole) ![dependencies](https://david-dm.org/username/repo.svg)
 Async friendly stream utility of Node.js
 
 # Usage
