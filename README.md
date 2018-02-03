@@ -1,5 +1,12 @@
 # Hole [![Build Status](https://travis-ci.org/piglovesyou/node-hole.svg?branch=master)](https://travis-ci.org/piglovesyou/node-hole)
-Async friendly parallel-stream utility in Node.js
+Async friendly, stream-based task consuming utility in Node.js
+
+# Concept
+After years, it gets more important for me to write less state code and naturally it has become more data-driven style. But that style and async programming, inevitable in Node, are not always a good match: on one hand, when you process and buffer too much async tasks, you'd end up with `FATAL ERROR: CALL_AND_RETRY_2 Allocation failed - process out of memory` or `Error: socket hang up` message. On the other hand, it's not efficient at all when you process data one by one in sequence. RxJS might be a close solution though, I didn't want to [tune timer functions](https://github.com/ReactiveX/RxJava/wiki/Backpressure#useful-operators-that-avoid-the-need-for-backpressure) for that problem; all I want is just to set **limit of buffering** and **finish a task in the best speed**. 
+
+Then Node Stream object mode with beautiful backpressuring mechanism comes along. Object mode lets you flow any JavaScript object in a stream with **`highWaterMark` option**, which decides limit of number of buffering objects. By the native backpressure implementation, when one place gets stack with buffering, it requests upper stream to pause to flow data. And thanks for [`parallel-stream`](https://github.com/mafintosh/parallel-transform), each part of a stream tries to fill full  of buffers all the time as **it keeps order of data** at the same time.
+
+Node `Hole` offers a fun, easy and efficient way of parallel data consuming by wrapping solid Node Stream implementation with async/promise friendly API.
 
 # Usage
 To install `hole` in your project, run:
@@ -8,10 +15,10 @@ To install `hole` in your project, run:
 $ npm add piglovesyou/node-hole
 ```
 
-Then use it like below.
+Then utilize it like below:
 
 ```javascript
-import {from as holeFrom} from 'hole';
+import hole from 'hole';
 import fetch from 'node-fetch';
 
 main();
@@ -19,7 +26,7 @@ main();
 async function main() {
     const url = 'https://jsonplaceholder.typicode.com/posts';
 
-    await holeFrom({url})   // `holeFrom(object: any): HoleStream`
+    await hole({url})   // `hole(object: any): Hole`
         .pipe(async function ({url}) {  // Async function! And it never blocks the stream,
                                         // thanks for parallel-stream module
             const posts = await fetch(url)
@@ -28,7 +35,7 @@ async function main() {
             return posts; // Array.
         })
         .pieces()    // Split an array into pieces,
-        .pipe(async function (post) {   // ...then the next step can deal with a piece of the array
+        .pipe(async function (post) {   // ...then the next step can handle the piece one by one
             const url = `https://jsonplaceholder.typicode.com/posts/${post.id}/comments`;
             const comments = await fetch(url)
                 .then(res => res.text())
@@ -45,7 +52,8 @@ async function main() {
           assert(Array.isArray(post.comments));
         })
         .start();   // Don't forget to call ".start()" that starts streaming.
-                    // And returns a promise object so that you can control additional async flow 
+                    // It returns a promise object so that you can control additional async flow 
+
     console.log('done.');
 }
 ```
@@ -54,11 +62,14 @@ async function main() {
 
 ## Exported functions
 
-### `hole(readable: ReadableStream): HoleStream`
+### `hole(object: any): Hole`
+### `holeWithArray(array: Array<any>): Hole`
+// TODO
+
+### `holeWithStream(readable: ReadableStream): Hole`
 
 Example:
 ```javascript
-import {Readable} from 'stream'
 import fs from 'fs';
 import csv2 from 'csv2';
 import hole from 'hole';
@@ -75,20 +86,20 @@ hole(fs.createReadableStream('./data.csv'))
     .start();
 ```
 
-### `holeFrom(object: any): HoleStream`
-// TODO
+## Functions of `Hole`
 
-### `holeFromArray(array: Array\<any>): HoleStream`
-// TODO
+### `type Gate`
+`Gate` is a type that you can pass to `.pipe(gate)`. It can be a function or native stream instance.
+```javascript
+type Gate = ((data: any) => (any | Promise<any>))
+    | stream$Readable
+    | stream$Writable
+    | stream$Transform;
+```
 
-## Functions of HoleStream instance
-
-### `.pipe(fn: (data: any) => (any|Promise<any>)): HoleStream`
-### `.pieces(): HoleStream`
+### `.pipe(fn: Gate): Hole`
+### `.pieces(): Hole`
 ### `.start(): Promise<void>`
-// TODO
-
-# Concept
 // TODO
 
 # License
