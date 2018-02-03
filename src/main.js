@@ -1,3 +1,5 @@
+// @flow
+
 import isPromise from 'is-promise';
 import pump from 'pump';
 import streamify from 'stream-array';
@@ -8,40 +10,55 @@ import {Transform, Writable} from 'stream';
 const defaultWritableHighWaterMark = getDefaultWritableHighWaterMark();
 
 export default hole;
-export {holeFromArray as fromArray}
-export {holeFromObject as from}
+export {holeFromArray as fromArray};
+export {holeFromObject as from};
 
-function hole(readable) {
+type Gate = ((data: any) => (any | Promise<any>))
+    | stream$Readable
+    | stream$Writable
+    | stream$Transform;
+
+type HoleStream = {
+  pipe: (Gate) => HoleStream,
+  pieces: () => HoleStream,
+  start: () => Promise<any>
+};
+
+function hole(readable: stream$Readable): HoleStream {
   const gates = [readable];
   return createInstance(gates);
 }
 
-function holeFromArray(array) {
+function holeFromArray(array: Array<Gate>): HoleStream {
   return hole(streamify(array));
 }
 
-function holeFromObject(obj) {
+function holeFromObject(obj: Gate): HoleStream {
   return holeFromArray([obj]);
 }
 
-function pipe(rest, newFn) {
+function pipe(rest: Array<Gate>, newFn: Gate): HoleStream {
   return createInstance([...rest, newFn]);
 }
 
-function createInstance(gates) {
+function createInstance(gates: Array<Gate>): HoleStream {
   return {
     pipe: pipe.bind(null, gates),
-    split: split.bind(null, gates),
-    start: exec.bind(null, gates),
+    pieces: pieces.bind(null, gates),
+    start: start.bind(null, gates),
     // TODO: filter()
   };
 }
 
-function split(gates) {
-  const r = new Transform({objectMode: true,});
-  r._transform = function (chunks, enc, callback) {
+class SplitTransform extends Transform {
+  constructor(opts) {
+    super({...opts, objectMode: true});
+  }
+
+  // noinspection JSUnusedGlobalSymbols
+  _transform(chunks, enc, callback) {
     if (!Array.isArray(chunks)) {
-      throw new Error('.split(fn) must receive an array.');
+      throw new Error('.pieces() must receive an array from previous function.');
     }
     push.call(this, chunks, 0);
     callback();
@@ -51,11 +68,15 @@ function split(gates) {
       this.push(chunks[curr]);
       push.call(this, chunks, curr + 1);
     }
-  };
-  return createInstance([...gates, r]);
+  }
 }
 
-function exec([readable, ...rest]) {
+function pieces(gates: Array<Gate>): HoleStream {
+  const t = new SplitTransform();
+  return createInstance([...gates, t]);
+}
+
+function start([readable, ...rest]: Array<Gate>): Promise<void> {
   return new Promise((resolve, reject) => {
     const streams = [
       readable,
@@ -64,8 +85,10 @@ function exec([readable, ...rest]) {
 
 	// TODO: Make able to pass parallel limit by api
 	return parallelTransform(defaultWritableHighWaterMark, function (obj, callback) {
+	  if (typeof fn !== 'function') throw new Error('cant be reached');
 	  const rv = fn.call(this, obj);
 	  if (isPromise(rv)) {
+	    if (typeof rv.then !== 'function') throw new Error('something wrong');
 	    rv.then(resolved => {
 	      callback(null, resolved);
 	    });
@@ -86,6 +109,7 @@ function getDefaultWritableHighWaterMark() {
   const w = new Writable({objectMode: true});
   // Node v9.4.0 or higher only returns number 16
   const rv = w.writableHighWaterMark || 16;
+  // $FlowFixMe https://github.com/facebook/flow/pull/5763
   w.destroy();
   return rv;
 }

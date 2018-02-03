@@ -13,7 +13,7 @@ describe('Hole', function () {
     await stream(fs.createReadStream('./package.json'))
 	.pipe(split2())
 	.pipe(line => {
-	  const matched = line.match(/^  "name": "(\w+?)",$/);
+	  const matched = line.match(/^ {2}"name": "(\w+?)",$/);
 	  if (matched && matched[1]) {
 	    actual = matched[1];
 	  }
@@ -35,7 +35,7 @@ describe('Hole', function () {
 	  expectPostCount = posts.length;
 	  return posts;
 	})
-	.split()
+	.pieces()
 	.pipe(async function (post) {
 	  const url = `https://jsonplaceholder.typicode.com/posts/${post.id}/comments`;
 	  const comments = await fetch(url)

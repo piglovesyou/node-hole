@@ -5,8 +5,9 @@
   "main": "index.js",
   "scripts": {
     "check": "flow check",
-    "test": "mocha --require @babel/register",
-    "build": "babel --out-dir lib src"
+    "test": "npm run check && mocha --require @babel/register",
+    "build": "babel --out-dir lib src",
+    "postinstall": "flow-typed install"
   },
   "files": [
     "lib",
@@ -24,11 +25,12 @@
   },
   "devDependencies": {
     "@babel/core": "^7.0.0-beta.39",
+    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.39",
     "@babel/preset-env": "^7.0.0-beta.39",
     "@babel/preset-flow": "^7.0.0-beta.39",
     "@babel/register": "^7.0.0-beta.39",
-    "babel-preset-flow": "^6.23.0",
     "flow-bin": "^0.64.0",
+    "flow-typed": "^2.3.0",
     "mocha": "^5.0.0",
     "node-fetch": "^1.7.3",
     "split2": "^2.2.0"

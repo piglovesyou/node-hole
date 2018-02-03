@@ -27,7 +27,7 @@ async function main() {
                 .then(JSON.parse);
             return posts; // Array.
         })
-        .split()    // Split an array into pieces,
+        .pieces()    // Split an array into pieces,
         .pipe(async function (post) {   // ...then the next step can deal with a piece of the array
             const url = `https://jsonplaceholder.typicode.com/posts/${post.id}/comments`;
             const comments = await fetch(url)

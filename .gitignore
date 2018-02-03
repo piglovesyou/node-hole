@@ -38,9 +38,6 @@ build/Release
 node_modules/
 jspm_packages/
 
-# Typescript v1 declaration files
-typings/
-
 # Optional npm cache directory
 .npm
 
@@ -53,9 +50,6 @@ typings/
 # Output of 'npm pack'
 *.tgz
 
-# Yarn Integrity file
-.yarn-integrity
-
 # dotenv environment variables file
 .env
 
@@ -66,3 +60,4 @@ node-hole.iml
 .idea
 
 /lib
+/flow-typed
