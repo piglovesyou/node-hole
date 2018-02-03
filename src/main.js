@@ -84,7 +84,8 @@ function exec([readable, ...rest]) {
 
 function getDefaultWritableHighWaterMark() {
   const w = new Writable({objectMode: true});
-  const rv = w.writableHighWaterMark;
+  // Node v9.4.0 or higher only returns number 16
+  const rv = w.writableHighWaterMark || 16;
   w.destroy();
   return rv;
 }
