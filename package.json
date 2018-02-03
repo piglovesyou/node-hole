@@ -4,24 +4,26 @@
   "description": "Async and promise friendly efficient stream utility",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha --require @babel/register",
+    "build": "babel --out-dir lib src"
   },
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "csv2": "^0.1.1",
+    "@babel/cli": "^7.0.0-beta.39",
     "is-promise": "^2.1.0",
     "is-stream": "^1.1.0",
-    "mississippi": "^1.3.1",
-    "node-fetch": "^1.7.3",
     "parallel-transform": "^1.1.0",
     "pump": "^3.0.0",
-    "request": "^2.83.0",
-    "request-promise": "^4.2.2",
-    "request-promise-native": "^1.0.5",
-    "split": "^1.0.1",
-    "split2": "^2.2.0",
-    "stream-array": "^1.1.2",
-    "through2": "^2.0.3"
+    "stream-array": "^1.1.2"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.0.0-beta.39",
+    "@babel/preset-env": "^7.0.0-beta.39",
+    "@babel/register": "^7.0.0-beta.39",
+    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
+    "mocha": "^5.0.0",
+    "node-fetch": "^1.7.3",
+    "split2": "^2.2.0"
   }
 }

@@ -1,71 +1,27 @@
-const isPromise = require('is-promise');
-const pump = require('pump');
-const fetch = require('node-fetch');
-const streamify = require('stream-array');
-const isStream = require('is-stream');
-
-const parallelTransform = require('parallel-transform');
-
-const {Writable, Transform} = require('stream');
+import isPromise from 'is-promise';
+import pump from 'pump';
+import streamify from 'stream-array';
+import isStream from 'is-stream';
+import parallelTransform from 'parallel-transform';
+import {Transform, Writable} from 'stream';
 
 const defaultWritableHighWaterMark = getDefaultWritableHighWaterMark();
 
-module.exports = hole;
-module.exports.withArray = holeWithArray;
-module.exports.with = holeWith;
-
-main()
-    .catch(reason => {
-      console.log(reason);
-      throw reason;
-    });
-
-async function main() {
-  const url = 'https://jsonplaceholder.typicode.com/posts';
-  console.time('speed?');
-  await holeWithArray([url])
-      .pipe(async function (url) {
-	return await fetch(url)
-	    .then(res => res.text())
-	    .then(JSON.parse);
-      })
-      .split()
-      .pipe(async function (post) {
-	const url = `https://jsonplaceholder.typicode.com/posts/${post.id}`;
-	return await fetch(url)
-	    .then(res => res.text())
-	    .then(JSON.parse);
-      })
-      .pipe(async function (post) {
-	const url = `https://jsonplaceholder.typicode.com/posts/${post.id}/comments`;
-	const comments = await fetch(url)
-	    .then(res => res.text())
-	    .then(JSON.parse);
-	return {
-	  id: post.id,
-	  title: post.title,
-	  comments: comments.map(c => c.body),
-	};
-      })
-      .pipe((out) => {
-	// console.log(out);
-      })
-      .exec();
-  console.timeEnd('speed?');
-  console.log('done.');
-}
+export default hole;
+export {holeFromArray as fromArray}
+export {holeFromObject as from}
 
 function hole(readable) {
   const gates = [readable];
   return createInstance(gates);
 }
 
-function holeWithArray(array) {
+function holeFromArray(array) {
   return hole(streamify(array));
 }
 
-function holeWith(obj) {
-  return holeWithArray([obj]);
+function holeFromObject(obj) {
+  return holeFromArray([obj]);
 }
 
 function pipe(rest, newFn) {
