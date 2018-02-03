@@ -10,11 +10,9 @@ const {Writable, Transform} = require('stream');
 
 const defaultWritableHighWaterMark = getDefaultWritableHighWaterMark();
 
-module.exports = {
-  hole,
-  holeWithArray,
-  holeWith,
-};
+module.exports = hole;
+module.exports.withArray = holeWithArray;
+module.exports.with = holeWith;
 
 main()
     .catch(reason => {
@@ -127,9 +125,9 @@ function exec([readable, ...rest]) {
   });
 }
 
-function timeout(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+// function timeout(ms) {
+//   return new Promise(resolve => setTimeout(resolve, ms));
+// }
 
 function getDefaultWritableHighWaterMark() {
   const w = new Writable({objectMode: true});
