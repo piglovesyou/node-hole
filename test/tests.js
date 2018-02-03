@@ -68,8 +68,16 @@ describe('Hole', function () {
     const actual = [];
     await streamFromArray(['a', 'b', 'c', 'd', 'e'])
 	.pipe(letter => letter.toUpperCase())
+	.pipe(async (letter) => {
+	  await timeout(Math.random() * 100);
+	  return letter;
+	})
 	.pipe(upper => actual.push({upper}))
 	.start();
     assert.deepStrictEqual(actual, expected);
   });
 });
+
+function timeout(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}

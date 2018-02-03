@@ -82,10 +82,6 @@ function exec([readable, ...rest]) {
   });
 }
 
-// function timeout(ms) {
-//   return new Promise(resolve => setTimeout(resolve, ms));
-// }
-
 function getDefaultWritableHighWaterMark() {
   const w = new Writable({objectMode: true});
   const rv = w.writableHighWaterMark;
