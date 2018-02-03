@@ -1,14 +1,12 @@
 const isPromise = require('is-promise');
 const pump = require('pump');
-const split2 = require('split2');
-const fs = require('fs');
 const fetch = require('node-fetch');
 const streamify = require('stream-array');
 const isStream = require('is-stream');
 
 const parallelTransform = require('parallel-transform');
 
-const {Readable, Writable, Transform, PassThrough, Stream} = require('stream');
+const {Writable, Transform} = require('stream');
 
 const defaultWritableHighWaterMark = getDefaultWritableHighWaterMark();
 
@@ -20,46 +18,50 @@ main()
 
 async function main() {
   const url = 'https://jsonplaceholder.typicode.com/posts';
-  console.time('speed?')
-  await streamFromArray([url])
+  console.time('speed?');
+  await holeWithArray([url])
       .pipe(async function (url) {
-        return await fetch(url)
-            .then(res => res.text())
-            .then(JSON.parse);
+	return await fetch(url)
+	    .then(res => res.text())
+	    .then(JSON.parse);
       })
       .split()
       .pipe(async function (post) {
-        const url = `https://jsonplaceholder.typicode.com/posts/${post.id}`;
-        return await fetch(url)
-            .then(res => res.text())
-            .then(JSON.parse);
+	const url = `https://jsonplaceholder.typicode.com/posts/${post.id}`;
+	return await fetch(url)
+	    .then(res => res.text())
+	    .then(JSON.parse);
       })
       .pipe(async function (post) {
-        const url = `https://jsonplaceholder.typicode.com/posts/${post.id}/comments`;
-        const comments = await fetch(url)
-            .then(res => res.text())
-            .then(JSON.parse);
-        return {
-          id: post.id,
-          title: post.title,
-          comments: comments.map(c => c.body),
-        };
+	const url = `https://jsonplaceholder.typicode.com/posts/${post.id}/comments`;
+	const comments = await fetch(url)
+	    .then(res => res.text())
+	    .then(JSON.parse);
+	return {
+	  id: post.id,
+	  title: post.title,
+	  comments: comments.map(c => c.body),
+	};
       })
       .pipe((out) => {
-        // console.log(out);
+	// console.log(out);
       })
       .exec();
-  console.timeEnd('speed?')
+  console.timeEnd('speed?');
   console.log('done.');
 }
 
-function stream(readable) {
+export function hole(readable) {
   const gates = [readable];
   return createInstance(gates);
 }
 
-function streamFromArray(array) {
-  return stream(streamify(array));
+export function holeWithArray(array) {
+  return hole(streamify(array));
+}
+
+export function holeWith(obj) {
+  return holeWithArray([obj]);
 }
 
 function pipe(rest, newFn) {
@@ -97,21 +99,22 @@ function exec([readable, ...rest]) {
     const streams = [
       readable,
       ...(rest.map((fn, i, rest) => {
-        if (isStream(fn)) return fn;
+	if (isStream(fn)) return fn;
 
-        return parallelTransform(defaultWritableHighWaterMark, function (obj, callback) {
-          const rv = fn.call(this, obj);
-          if (isPromise(rv)) {
-            rv.then(resolved => {
-              callback(null, resolved);
-            });
-            return;
-          }
-          callback(null, rv);
-        });
+	// TODO: Make able to pass parallel limit by api
+	return parallelTransform(defaultWritableHighWaterMark, function (obj, callback) {
+	  const rv = fn.call(this, obj);
+	  if (isPromise(rv)) {
+	    rv.then(resolved => {
+	      callback(null, resolved);
+	    });
+	    return;
+	  }
+	  callback(null, rv);
+	});
       })),
       (error) => {
-        if (error) reject(error); else resolve();
+	if (error) reject(error); else resolve();
       }
     ];
     pump.apply(null, streams);
