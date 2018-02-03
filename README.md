@@ -4,13 +4,13 @@ Async friendly stream utility of Node.js
 # Usage
 Install `hole` in your project
 
-```
+```bash
 $ npm add hole
 ```
 
 Then use it as you want.
 
-```
+```javascript
 import {from as streamFrom} from 'hole';
 import fetch from 'node-fetch';
 
