@@ -1,14 +1,18 @@
 {
   "name": "hole",
   "version": "0.0.1",
-  "description": "Async and promise friendly efficient stream utility",
+  "description": "Async friendly stream utility",
   "main": "index.js",
   "scripts": {
     "test": "mocha --require @babel/register",
     "build": "babel --out-dir lib src"
   },
+  "files": [
+    "lib",
+    "package-lock.json"
+  ],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@babel/cli": "^7.0.0-beta.39",
     "is-promise": "^2.1.0",
@@ -21,7 +25,6 @@
     "@babel/core": "^7.0.0-beta.39",
     "@babel/preset-env": "^7.0.0-beta.39",
     "@babel/register": "^7.0.0-beta.39",
-    "babel-plugin-transform-es2015-modules-commonjs": "^6.26.0",
     "mocha": "^5.0.0",
     "node-fetch": "^1.7.3",
     "split2": "^2.2.0"

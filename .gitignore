@@ -62,4 +62,7 @@ typings/
 # next.js build output
 .next
 
+node-hole.iml
+.idea
+
 /lib
