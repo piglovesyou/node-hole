@@ -10,6 +10,12 @@ const {Writable, Transform} = require('stream');
 
 const defaultWritableHighWaterMark = getDefaultWritableHighWaterMark();
 
+module.exports = {
+  hole,
+  holeWithArray,
+  holeWith,
+};
+
 main()
     .catch(reason => {
       console.log(reason);
@@ -51,16 +57,16 @@ async function main() {
   console.log('done.');
 }
 
-export function hole(readable) {
+function hole(readable) {
   const gates = [readable];
   return createInstance(gates);
 }
 
-export function holeWithArray(array) {
+function holeWithArray(array) {
   return hole(streamify(array));
 }
 
-export function holeWith(obj) {
+function holeWith(obj) {
   return holeWithArray([obj]);
 }
 
@@ -98,7 +104,7 @@ function exec([readable, ...rest]) {
   return new Promise((resolve, reject) => {
     const streams = [
       readable,
-      ...(rest.map((fn, i, rest) => {
+      ...(rest.map((fn) => {
 	if (isStream(fn)) return fn;
 
 	// TODO: Make able to pass parallel limit by api
