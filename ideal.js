@@ -8,13 +8,9 @@ const isStream = require('is-stream');
 
 const transform = require('parallel-transform');
 
-// const stream = transform(10, function (data, callback) { // 10 is the parallism level
-//   setTimeout(function () {
-//     callback(null, data);
-//   }, Math.random() * 1000);
-// });
-
 const {Readable, Writable, Transform, PassThrough, Stream} = require('stream');
+
+const defaultWritableHighWaterMark = getDefaultWritableHighWaterMark();
 
 main()
     .catch(reason => {
@@ -38,25 +34,15 @@ async function main() {
             .then(res => res.text())
             .then(JSON.parse);
         return {
-          postId: post.id,
-          postTitle: post.title,
-          commentTitles: comments.map(c => c.body),
+          id: post.id,
+          title: post.title,
+          comments: comments.map(c => c.body),
         };
       })
       .pipe((out) => {
         console.log(out);
       })
       .exec();
-  // const r = fs.createReadStream('./package.json');
-  // await stream(r)
-  //     .pipe(split2())
-  //     .pipe(function (chunk) {
-  //       // console.log(`+++${chunk} (${this.readableLength == null ? '_' :
-  // this.readableLength}:${this.writableLength == null ? '_' : this.writableLength})`); return chunk; }) .pipe(async
-  // function (chunk) { await timeout(10); console.log(`???${chunk} (${this.readableLength == null ? '_' :
-  // this.readableLength}:${this.writableLength == null ? '_' : this.writableLength})`); return chunk; }) .pipe(async
-  // function (chunk) { await timeout(100); console.log(`===${chunk} (${this.readableLength == null ? '_' :
-  // this.readableLength}:${this.writableLength == null ? '_' : this.writableLength})`); return chunk; }) .exec();
   console.log('done.');
 }
 
@@ -86,7 +72,7 @@ function split(tanks) {
   const r = new Transform({objectMode: true,});
   r._transform = function (chunks, enc, callback) {
     if (!Array.isArray(chunks)) {
-      throw new Error('.split(fn) must receive array.');
+      throw new Error('.split(fn) must receive an array.');
     }
     push.call(this, chunks, 0);
     callback();
@@ -113,20 +99,31 @@ function exec([readable, ...rest]) {
         //   return s;
         // }
 
-        const s = new Transform({objectMode: true,});
-        s._transform = _processStream;
-        return s;
-
-        function _processStream(obj, enc, callback) {
+        return transform(defaultWritableHighWaterMark, function (obj, callback) {
           const rv = fn.call(this, obj);
           if (isPromise(rv)) {
-            rv.then(resolvedValue => {
-              callback(null, resolvedValue);
+            rv.then(resolved => {
+              callback(null, resolved);
             });
             return;
           }
           callback(null, rv);
-        }
+        });
+
+        // const s = new Transform({objectMode: true,});
+        // s._transform = _processStream;
+        // return s;
+        //
+        // function _processStream(obj, enc, callback) {
+        //   const rv = fn.call(this, obj);
+        //   if (isPromise(rv)) {
+        //     rv.then(resolvedValue => {
+        //       callback(null, resolvedValue);
+        //     });
+        //     return;
+        //   }
+        //   callback(null, rv);
+        // }
       })),
       (error) => {
         if (error) reject(error); else resolve();
@@ -140,4 +137,11 @@ function exec([readable, ...rest]) {
 
 function timeout(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getDefaultWritableHighWaterMark() {
+  const w = new Writable({objectMode: true});
+  const rv = w.writableHighWaterMark;
+  w.destroy();
+  return rv;
 }
