@@ -1,129 +1,130 @@
-const stream = require('stream');
+const isPromise = require('is-promise');
+const pump = require('pump');
+const split2 = require('split2');
+const fs = require('fs');
+const fetch = require('node-fetch');
+const streamify = require('stream-array');
+const isStream = require('is-stream');
 
-let i = 0;
-const highWaterMark = 10;
+const parallelTransform = require('parallel-transform');
 
-class MyReadable extends stream.Readable {
-  constructor(options) {
-    super({
-      objectMode: true,
-      highWaterMark,
-      ...options,
+const {Readable, Writable, Transform, PassThrough, Stream} = require('stream');
+
+const defaultWritableHighWaterMark = getDefaultWritableHighWaterMark();
+
+main()
+    .catch(reason => {
+      console.log(reason);
+      throw reason;
     });
-  }
 
-  _read(_size) {
-    console.log(`+read... ${i} (rb: ${this.readableLength})`);
-    this.push({i: i++});
-  }
+async function main() {
+  const url = 'https://jsonplaceholder.typicode.com/posts';
+  console.time('speed?')
+  await streamFromArray([url])
+      .pipe(async function (url) {
+        return await fetch(url)
+            .then(res => res.text())
+            .then(JSON.parse);
+      })
+      .split()
+      .pipe(async function (post) {
+        const url = `https://jsonplaceholder.typicode.com/posts/${post.id}`;
+        return await fetch(url)
+            .then(res => res.text())
+            .then(JSON.parse);
+      })
+      .pipe(async function (post) {
+        const url = `https://jsonplaceholder.typicode.com/posts/${post.id}/comments`;
+        const comments = await fetch(url)
+            .then(res => res.text())
+            .then(JSON.parse);
+        return {
+          id: post.id,
+          title: post.title,
+          comments: comments.map(c => c.body),
+        };
+      })
+      .pipe((out) => {
+        // console.log(out);
+      })
+      .exec();
+  console.timeEnd('speed?')
+  console.log('done.');
 }
 
-class MyTransform extends stream.Transform {
-  constructor(options) {
-    super({
-      objectMode: true,
-      highWaterMark,
-      ...options,
-    });
-  }
-
-  _transform(chunk, enc, callback) {
-    setTimeout(() => {
-      const {i} = chunk;
-      console.log(`++transform... ${i}, (rb: ${this.readableLength}, wb: ${this.writableLength})`);
-      callback(null, chunk);
-    }, 10);
-  }
+function stream(readable) {
+  const gates = [readable];
+  return createInstance(gates);
 }
 
-class MyWritable extends stream.Writable {
-  constructor(options) {
-    super({
-      objectMode: true,
-      highWaterMark,
-      ...options,
-    });
-  }
-
-  _write(chunk, encoding, callback) {
-    setTimeout(() => {
-      const {i} = chunk;
-      console.log(`+++write... ${i}, (wb: ${this.writableLength})`);
-      callback();
-    }, 10);
-  }
+function streamFromArray(array) {
+  return stream(streamify(array));
 }
 
-const r = new MyReadable();
-const t = new MyTransform();
-const w = new MyWritable();
+function pipe(rest, newFn) {
+  return createInstance([...rest, newFn]);
+}
 
-r.pipe(t)
-    .pipe(w);
+function createInstance(gates) {
+  return {
+    pipe: pipe.bind(null, gates),
+    exec: exec.bind(null, gates),
+    split: split.bind(null, gates),
+  };
+}
 
-// class Counter extends stream.Readable {
-//   constructor(opt) {
-//     super(opt);
-//     this._max = 10000;
-//     this._index = 1;
-//   }
-//
-//   _read() {
-//     const i = this._index++;
-//     console.log(`count: ${i}`);
-//     if (i > this._max)
-//       this.push(null);
-//     else {
-//       const str = String(i);
-//       const buf = Buffer.from(str, 'ascii');
-//       this.push(buf);
-//     }
-//   }
-// }
-//
+function split(gates) {
+  const r = new Transform({objectMode: true,});
+  r._transform = function (chunks, enc, callback) {
+    if (!Array.isArray(chunks)) {
+      throw new Error('.split(fn) must receive an array.');
+    }
+    push.call(this, chunks, 0);
+    callback();
 
+    function push(chunks, curr) {
+      if (!chunks[curr]) return;
+      this.push(chunks[curr]);
+      push.call(this, chunks, curr + 1);
+    }
+  };
+  return createInstance([...gates, r]);
+}
 
-// FS.createReadStream('data.csv')
-//     .pipe(csv2({highWaterMark: 3}))
-//     .pipe(new stream.Transform({
-//       readableObjectMode: true, // reading in buffers
-//       writableObjectMode: true, // writing out json decoded objects
-//       highWaterMark: 3, // bytes or objects???
-//       transform(chunk, enc, callback) {
-//         var data = {
-//           name: chunk[0]
-//           , address: chunk[3]
-//           , phone: chunk[10]
-//         };
-//         console.log('(push)')
-//         this.push(data);
-//
-//         // callback();
-//         setTimeout(callback, 1200)
-//       }
-//     }))
-//     // .pipe(through2({objectMode: true, highWaterMark: 3, readableHighWaterMark: 3, writableHighWaterMark:3},
-// function (chunk, enc, callback) { //   var data = { //     name: chunk[0] //     , address: chunk[3] //     , phone:
-// chunk[10] //   }; //   console.log('(push)') //   this.push(data); // //   setTimeout(callback, 2000) // }))
-// .on('data', function (data) { console.log('--', data); }) .on('end', function () { console.log('Done!'); });
+function exec([readable, ...rest]) {
+  return new Promise((resolve, reject) => {
+    const streams = [
+      readable,
+      ...(rest.map((fn, i, rest) => {
+        if (isStream(fn)) return fn;
 
-// var miss = require('mississippi');
-//
-// // lets do a simple file copy
-// var fs = require('fs');
-//
-// var read = fs.createReadStream('./original.zip');
-// var write = fs.createWriteStream('./copy.zip');
-//
-// // use miss.pipe instead of read.pipe(write)
-// miss.pipe(read, write, function (err) {
-//   if (err) return console.error('Copy error!', err);
-//   console.log('Copied successfully');
-// });
-//
-//
-// stream(readable)
-//     .pipe(slice())
-//     .pipe(async (line) =>{
-//
-//     }, {parallel: 8});
+        return parallelTransform(defaultWritableHighWaterMark, function (obj, callback) {
+          const rv = fn.call(this, obj);
+          if (isPromise(rv)) {
+            rv.then(resolved => {
+              callback(null, resolved);
+            });
+            return;
+          }
+          callback(null, rv);
+        });
+      })),
+      (error) => {
+        if (error) reject(error); else resolve();
+      }
+    ];
+    pump.apply(null, streams);
+  });
+}
+
+function timeout(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function getDefaultWritableHighWaterMark() {
+  const w = new Writable({objectMode: true});
+  const rv = w.writableHighWaterMark;
+  w.destroy();
+  return rv;
+}
