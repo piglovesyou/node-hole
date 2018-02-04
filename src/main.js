@@ -72,7 +72,7 @@ function filter(gates: Array<GateInfo>, fn: Gate, opts?: GateOption = {}): Hole 
       if (typeof rv.then !== 'function') throw new Error('something wrong');
       rv.then(resolved => {
         if (Boolean(resolved)) {
-	  callback(null, resolved);
+	  callback(null, obj);
 	  return;
 	}
 	callback();
@@ -80,7 +80,7 @@ function filter(gates: Array<GateInfo>, fn: Gate, opts?: GateOption = {}): Hole 
       return;
     }
     if (Boolean(rv)) {
-      callback(null, rv);
+      callback(null, obj);
       return;
     }
     callback();

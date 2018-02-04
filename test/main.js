@@ -78,6 +78,24 @@ describe('Hole', function () {
 	.start();
     assert.equal(actual, expected);
   });
+
+  it('.filter() filters correctly', async function () {
+    const expected = [5, 6, 7];
+    const actual = [];
+    await holeWithArray([1, 2, 3, 4, 5, 6, 7, 8])
+	.filter((n) => {
+	  return 5 <= n;
+	})
+	.filter(async (n) => {
+	  await timeout(Math.random() * 100);
+	  return n <= 7;
+	})
+	.pipe((n) => {
+	  return actual.push(n);
+	})
+	.start();
+    assert.deepStrictEqual(expected, actual);
+  });
 });
 
 function timeout(ms) {
