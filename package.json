@@ -1,7 +1,17 @@
 {
   "name": "hole",
   "version": "0.0.1",
-  "description": "Async friendly stream utility",
+  "description": "Async friendly, stream-based task consuming utility in Node.js",
+  "keywords": [
+    "hole",
+    "async",
+    "promise",
+    "stream",
+    "rxjs",
+    "utility"
+  ],
+  "homepage": "https://github.com/piglovesyou/node-hole",
+  "bugs": "https://github.com/piglovesyou/node-hole/issues",
   "main": "index.js",
   "scripts": {
     "check": "flow check",
@@ -13,7 +23,8 @@
     "lib",
     "package-lock.json"
   ],
-  "author": "",
+  "author": "thepiglovesyou@gmail.com",
+  "repository": "git@github.com:piglovesyou/node-hole.git",
   "license": "MIT",
   "dependencies": {
     "@babel/cli": "^7.0.0-beta.39",
