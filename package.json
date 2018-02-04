@@ -27,7 +27,6 @@
   "repository": "git@github.com:piglovesyou/node-hole.git",
   "license": "MIT",
   "dependencies": {
-    "@babel/cli": "^7.0.0-beta.39",
     "is-promise": "^2.1.0",
     "is-stream": "^1.1.0",
     "parallel-transform": "^1.1.0",
@@ -35,6 +34,7 @@
     "stream-array": "^1.1.2"
   },
   "devDependencies": {
+    "@babel/cli": "^7.0.0-beta.39",
     "@babel/core": "^7.0.0-beta.39",
     "@babel/plugin-proposal-object-rest-spread": "^7.0.0-beta.39",
     "@babel/preset-env": "^7.0.0-beta.39",
