@@ -25,11 +25,11 @@ export function holeWithStream(readable: stream$Readable): Hole {
   return createInstance(gates);
 }
 
-export function holeWithArray(array: Array<Gate>): Hole {
+export function holeWithArray(array: Array<any>): Hole {
   return holeWithStream(streamify(array));
 }
 
-export default function hole(obj: Gate): Hole {
+export default function hole(obj: any): Hole {
   return holeWithArray([obj]);
 }
 

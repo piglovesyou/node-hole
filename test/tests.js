@@ -1,3 +1,5 @@
+// @flow
+
 import assert from 'assert';
 import fs from 'fs';
 import hole, {holeWithArray, holeWithStream} from '../src/main';
