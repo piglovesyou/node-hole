@@ -89,6 +89,7 @@ holeWithStream(fs.createReadableStream('./data.csv'))
 ## Chaining functions of `Hole`
 
 #### `.pipe(fn: Gate, opts: GateOption): Hole`
+#### `.filter(fn: Gate, opts: GateOption): Hole`
 #### `.pieces(): Hole`
 #### `.start(): Promise<void>`
 
