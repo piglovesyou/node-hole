@@ -28,6 +28,7 @@ type GateInfo = [Gate, GateOption];
 
 export type Hole = {
   pipe: (Gate, opts?: GateOption) => Hole,
+  filter: (Gate, opts?: GateOption) => Hole,
   pieces: () => Hole,
   start: () => Promise<any>
 };
@@ -45,17 +46,46 @@ export default function hole(obj: any): Hole {
   return holeWithArray([obj]);
 }
 
-function pipe(rest: Array<GateInfo>, newFn: Gate, opts?: GateOption): Hole {
-  return createInstance([...rest, [newFn, opts || {}]]);
+function pipe(rest: Array<GateInfo>, newFn: Gate, opts: GateOption = {}): Hole {
+  return createInstance([...rest, [newFn, opts]]);
 }
 
 function createInstance(gates: Array<GateInfo>): Hole {
   return {
     pipe: pipe.bind(null, gates),
     pieces: pieces.bind(null, gates),
+    filter: filter.bind(null, gates),
     start: start.bind(null, gates),
-    // TODO: filter()
   };
+}
+
+function filter(gates: Array<GateInfo>, fn: Gate, opts?: GateOption = {}): Hole {
+  if (typeof fn !== 'function') {
+    throw new Error('.filter() only accepts function')
+  }
+  // TODO: Refac duplication of using parallelTransform
+  const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
+  const t = parallelTransform(highWaterMark, opts, function (obj, callback) {
+    if (typeof fn !== 'function') throw new Error('cant be reached');
+    const rv = fn.call(this, obj);
+    if (isPromise(rv)) {
+      if (typeof rv.then !== 'function') throw new Error('something wrong');
+      rv.then(resolved => {
+        if (Boolean(resolved)) {
+	  callback(null, resolved);
+	  return;
+	}
+	callback();
+      });
+      return;
+    }
+    if (Boolean(rv)) {
+      callback(null, rv);
+      return;
+    }
+    callback();
+  });
+  return createInstance([...gates, [t, {}]]);
 }
 
 function pieces(gates: Array<GateInfo>): Hole {
