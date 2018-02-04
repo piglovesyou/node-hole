@@ -9,19 +9,30 @@ import {Transform, Writable} from 'stream';
 
 const defaultWritableHighWaterMark = getDefaultWritableHighWaterMark();
 
-export type Gate = ((data: any) => (any | Promise<any>))
+type stream$writableStreamOptions = {
+  highWaterMark?: number,
+  decodeString?: boolean,
+  objectMode?: boolean
+};
+
+type GateOption = {} | stream$writableStreamOptions;
+
+export type Gate = ((data: any) => any)
+    | ((data: any) => Promise<any>)
     | stream$Readable
     | stream$Writable
     | stream$Transform;
 
+type GateTuple = [Gate, GateOption];
+
 export type Hole = {
-  pipe: (Gate) => Hole,
+  pipe: (Gate, GateOption) => Hole,
   pieces: () => Hole,
   start: () => Promise<any>
 };
 
 export function holeWithStream(readable: stream$Readable): Hole {
-  const gates = [readable];
+  const gates = [[readable, {}]];
   return createInstance(gates);
 }
 
@@ -33,11 +44,11 @@ export default function hole(obj: any): Hole {
   return holeWithArray([obj]);
 }
 
-function pipe(rest: Array<Gate>, newFn: Gate): Hole {
-  return createInstance([...rest, newFn]);
+function pipe(rest: Array<GateTuple>, newFn: Gate, opts: ?GateOption): Hole {
+  return createInstance([...rest, [newFn, opts || {}]]);
 }
 
-function createInstance(gates: Array<Gate>): Hole {
+function createInstance(gates: Array<GateTuple>): Hole {
   return {
     pipe: pipe.bind(null, gates),
     pieces: pieces.bind(null, gates),
@@ -67,20 +78,20 @@ class SplitTransform extends Transform {
   }
 }
 
-function pieces(gates: Array<Gate>): Hole {
+function pieces(gates: Array<GateTuple>): Hole {
   const t = new SplitTransform();
-  return createInstance([...gates, t]);
+  return createInstance([...gates, [t, {}]]);
 }
 
-function start([readable, ...rest]: Array<Gate>): Promise<void> {
+function start([[readable], ...rest]: Array<GateTuple>): Promise<void> {
   return new Promise((resolve, reject) => {
     const streams = [
       readable,
-      ...(rest.map((fn) => {
+      ...(rest.map(([fn, opts]) => {
 	if (isStream(fn)) return fn;
 
-	// TODO: Make able to pass parallel limit by api
-	return parallelTransform(defaultWritableHighWaterMark, function (obj, callback) {
+	const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
+	return parallelTransform(highWaterMark, opts, function (obj, callback) {
 	  if (typeof fn !== 'function') throw new Error('cant be reached');
 	  const rv = fn.call(this, obj);
 	  if (isPromise(rv)) {
