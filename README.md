@@ -2,11 +2,11 @@
 Async friendly, stream-based task consuming utility in Node.js
 
 # Concept
-After years, it gets more important for me to write less state code and naturally it has become more data-driven style. But that style and async programming, inevitable in Node, are not always a good match: on one hand, when you process and buffer too much async tasks, you'd end up with `FATAL ERROR: CALL_AND_RETRY_2 Allocation failed - process out of memory` or `Error: socket hang up` message. On the other hand, it's not efficient at all when you process data one by one in sequence. RxJS might be a close solution though, I didn't want to [tune timer functions](https://github.com/ReactiveX/RxJava/wiki/Backpressure#useful-operators-that-avoid-the-need-for-backpressure) for that problem; all I want is just to set **limit of buffering** and **finish a task in the best speed**. 
+After years, it gets more important for me to write less-state code and naturally it has become more data-driven/functional style. But that style and async programming, inevitable in Node, are not always a good match: on one hand, when you process and buffer too many async tasks, you'd end up with `FATAL ERROR: CALL_AND_RETRY_2 Allocation failed - process out of memory` or `Error: socket hang up` message. On the other hand, it's not efficient at all when you process data one by one in sequence. Reactive Extensions might be a close solution though, I didn't want to [tune timer functions](https://github.com/ReactiveX/RxJava/wiki/Backpressure#useful-operators-that-avoid-the-need-for-backpressure) for that problem; all I want is just to set **limit of buffer** and **finish a task in the best speed**. 
 
-Then Node Stream object mode with beautiful backpressuring mechanism comes along. Object mode lets you flow any JavaScript object in a stream with **`highWaterMark` option**, which decides limit of number of buffering objects. By the native backpressure implementation, when one place gets stack with buffering, it requests upper stream to pause to flow data. And thanks for [`parallel-stream`](https://github.com/mafintosh/parallel-transform), each part of a stream tries to fill full  of buffers all the time as **it keeps order of data** at the same time.
+Then Node Stream object mode with beautiful backpressuring mechanism comes along. Object mode lets you flow any JavaScript object in a stream with **`highWaterMark` option**, which decides limit of number of buffering objects. By the native backpressure implementation, a busy write stream reaching to the water mark requests upper readable stream to moderate amount of the data stream. And thanks for [`parallel-stream`](https://github.com/mafintosh/parallel-transform), each part of a stream tries to fill full of buffers all the time as **it keeps order of data** at the same time.
 
-Node `Hole` offers a fun, easy and efficient way of parallel data consuming by wrapping solid Node Stream implementation with async/promise friendly API.
+Node Hole offers a fun, easy and efficient way of parallel data consuming by wrapping solid Node Stream implementation with async/promise friendly API.
 
 # Usage
 To install `hole` in your project, run:
@@ -89,10 +89,9 @@ hole(fs.createReadableStream('./data.csv'))
 ## Functions of `Hole`
 
 ### `type Gate`
-`Gate` is a type that you can pass to `.pipe(gate)`. It can be a function or native stream instance.
+`Gate` is a type that you can pass to `.pipe(gate)`. It can be a `function`, `async function` or native writable stream.
 ```javascript
 type Gate = ((data: any) => (any | Promise<any>))
-    | stream$Readable
     | stream$Writable
     | stream$Transform;
 ```
