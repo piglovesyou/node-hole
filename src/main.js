@@ -27,7 +27,7 @@ export type Gate = ((data: any) => any)
 type GateInfo = [Gate, GateOption];
 
 export type Hole = {
-  pipe: (Gate, opts?:GateOption) => Hole,
+  pipe: (Gate, opts?: GateOption) => Hole,
   pieces: () => Hole,
   start: () => Promise<any>
 };
@@ -58,29 +58,23 @@ function createInstance(gates: Array<GateInfo>): Hole {
   };
 }
 
-class SplitTransform extends Transform {
-  constructor(opts) {
-    super({...opts, objectMode: true});
-  }
-
-  // noinspection JSUnusedGlobalSymbols
-  _transform(chunks, enc, callback) {
-    if (!Array.isArray(chunks)) {
-      throw new Error('.pieces() must receive an array from previous function.');
-    }
-    push.call(this, chunks, 0);
-    callback();
-
-    function push(chunks, curr) {
-      if (!chunks[curr]) return;
-      this.push(chunks[curr]);
-      push.call(this, chunks, curr + 1);
-    }
-  }
-}
-
 function pieces(gates: Array<GateInfo>): Hole {
-  const t = new SplitTransform();
+  const t = new Transform({
+    objectMode: true,
+    transform: function (chunks, enc, callback) {
+      if (!Array.isArray(chunks)) {
+	throw new Error('.pieces() must receive an array from previous function.');
+      }
+      push.call(this, chunks, 0);
+      callback();
+
+      function push(chunks, curr) {
+	if (!chunks[curr]) return;
+	this.push(chunks[curr]);
+	push.call(this, chunks, curr + 1);
+      }
+    }
+  });
   return createInstance([...gates, [t, {}]]);
 }
 
