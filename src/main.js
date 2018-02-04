@@ -27,7 +27,7 @@ export type Gate = ((data: any) => any)
 type GateInfo = [Gate, GateOption];
 
 export type Hole = {
-  pipe: (Gate, GateOption) => Hole,
+  pipe: (Gate, opts?:GateOption) => Hole,
   pieces: () => Hole,
   start: () => Promise<any>
 };
@@ -45,7 +45,7 @@ export default function hole(obj: any): Hole {
   return holeWithArray([obj]);
 }
 
-function pipe(rest: Array<GateInfo>, newFn: Gate, opts: ?GateOption): Hole {
+function pipe(rest: Array<GateInfo>, newFn: Gate, opts?: GateOption): Hole {
   return createInstance([...rest, [newFn, opts || {}]]);
 }
 
