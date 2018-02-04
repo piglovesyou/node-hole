@@ -14,30 +14,30 @@ export type Gate = ((data: any) => (any | Promise<any>))
     | stream$Writable
     | stream$Transform;
 
-export type HoleStream = {
-  pipe: (Gate) => HoleStream,
-  pieces: () => HoleStream,
+export type Hole = {
+  pipe: (Gate) => Hole,
+  pieces: () => Hole,
   start: () => Promise<any>
 };
 
-export function holeWithStream(readable: stream$Readable): HoleStream {
+export function holeWithStream(readable: stream$Readable): Hole {
   const gates = [readable];
   return createInstance(gates);
 }
 
-export function holeWithArray(array: Array<Gate>): HoleStream {
+export function holeWithArray(array: Array<Gate>): Hole {
   return holeWithStream(streamify(array));
 }
 
-export default function hole(obj: Gate): HoleStream {
+export default function hole(obj: Gate): Hole {
   return holeWithArray([obj]);
 }
 
-function pipe(rest: Array<Gate>, newFn: Gate): HoleStream {
+function pipe(rest: Array<Gate>, newFn: Gate): Hole {
   return createInstance([...rest, newFn]);
 }
 
-function createInstance(gates: Array<Gate>): HoleStream {
+function createInstance(gates: Array<Gate>): Hole {
   return {
     pipe: pipe.bind(null, gates),
     pieces: pieces.bind(null, gates),
@@ -67,7 +67,7 @@ class SplitTransform extends Transform {
   }
 }
 
-function pieces(gates: Array<Gate>): HoleStream {
+function pieces(gates: Array<Gate>): Hole {
   const t = new SplitTransform();
   return createInstance([...gates, t]);
 }
