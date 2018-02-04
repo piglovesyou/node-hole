@@ -69,7 +69,7 @@ function filter(gates: Array<GateInfo>, fn: Gate, opts?: GateOption = {}): Hole 
     if (typeof fn !== 'function') throw new Error('cant be reached');
     const rv = fn.call(this, obj);
     if (isPromise(rv)) {
-      if (typeof rv.then !== 'function') throw new Error('something wrong');
+      if (typeof rv.then !== 'function') throw new Error('cant be reached');
       rv.then(resolved => {
         if (Boolean(resolved)) {
 	  callback(null, obj);
@@ -120,7 +120,7 @@ function start([[readable], ...rest]: Array<GateInfo>): Promise<void> {
 	  if (typeof fn !== 'function') throw new Error('cant be reached');
 	  const rv = fn.call(this, obj);
 	  if (isPromise(rv)) {
-	    if (typeof rv.then !== 'function') throw new Error('something wrong');
+	    if (typeof rv.then !== 'function') throw new Error('cant be reached');
 	    rv.then(resolved => {
 	      callback(null, resolved);
 	    });
