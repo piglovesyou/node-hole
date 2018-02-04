@@ -90,13 +90,11 @@ hole(fs.createReadableStream('./data.csv'))
 
 ### `type Gate`
 `Gate` is a type that you can pass to `.pipe(gate)`. It can be a `function`, `async function` or native writable stream.
-```javascript
-type Gate = ((data: any) => (any | Promise<any>))
-    | stream$Writable
-    | stream$Transform;
-```
 
-### `.pipe(fn: Gate): Hole`
+### `type GateOption`
+`GateOption` is a type to pass to transform stream. `highWaterMark` can be adjustable here, which is 16 by default of Node Stream.
+
+### `.pipe(fn: Gate, opts: GateOption): Hole`
 ### `.pieces(): Hole`
 ### `.start(): Promise<void>`
 // TODO

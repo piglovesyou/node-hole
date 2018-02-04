@@ -9,6 +9,7 @@ import {Transform, Writable} from 'stream';
 
 const defaultWritableHighWaterMark = getDefaultWritableHighWaterMark();
 
+// From https://github.com/facebook/flow/blob/v0.64.0/lib/node.js#L1436
 type stream$writableStreamOptions = {
   highWaterMark?: number,
   decodeString?: boolean,
@@ -23,7 +24,7 @@ export type Gate = ((data: any) => any)
     | stream$Writable
     | stream$Transform;
 
-type GateTuple = [Gate, GateOption];
+type GateInfo = [Gate, GateOption];
 
 export type Hole = {
   pipe: (Gate, GateOption) => Hole,
@@ -44,11 +45,11 @@ export default function hole(obj: any): Hole {
   return holeWithArray([obj]);
 }
 
-function pipe(rest: Array<GateTuple>, newFn: Gate, opts: ?GateOption): Hole {
+function pipe(rest: Array<GateInfo>, newFn: Gate, opts: ?GateOption): Hole {
   return createInstance([...rest, [newFn, opts || {}]]);
 }
 
-function createInstance(gates: Array<GateTuple>): Hole {
+function createInstance(gates: Array<GateInfo>): Hole {
   return {
     pipe: pipe.bind(null, gates),
     pieces: pieces.bind(null, gates),
@@ -78,12 +79,12 @@ class SplitTransform extends Transform {
   }
 }
 
-function pieces(gates: Array<GateTuple>): Hole {
+function pieces(gates: Array<GateInfo>): Hole {
   const t = new SplitTransform();
   return createInstance([...gates, [t, {}]]);
 }
 
-function start([[readable], ...rest]: Array<GateTuple>): Promise<void> {
+function start([[readable], ...rest]: Array<GateInfo>): Promise<void> {
   return new Promise((resolve, reject) => {
     const streams = [
       readable,
