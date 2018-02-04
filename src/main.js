@@ -63,7 +63,7 @@ function createInstance(gates: Array<GateInfo>): Hole {
 
 function filter(gates: Array<GateInfo>, fn: Gate, opts?: GateOption = {}): Hole {
   if (typeof fn !== 'function') {
-    throw new Error('.filter() only accepts function')
+    throw new Error('.filter() only accepts function');
   }
   // TODO: Refac duplication of using parallelTransform
   const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
@@ -73,7 +73,7 @@ function filter(gates: Array<GateInfo>, fn: Gate, opts?: GateOption = {}): Hole 
     if (isPromise(rv)) {
       if (typeof rv.then !== 'function') throw new Error('cant be reached');
       rv.then(resolved => {
-        if (Boolean(resolved)) {
+	if (Boolean(resolved)) {
 	  callback(null, obj);
 	  return;
 	}
