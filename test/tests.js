@@ -1,33 +1,18 @@
 import assert from 'assert';
 import fs from 'fs';
-import {default as stream, from as streamFrom, fromArray as streamFromArray} from '../src/main';
+import hole, {holeWithArray, holeWithStream} from '../src/main';
 import fetch from 'node-fetch';
 import split2 from 'split2';
 
 describe('Hole', function () {
   this.timeout(10 * 1000);
 
-  it('accepts readable stream', async function () {
-    const expected = 'hole';
-    let actual = '';
-    await stream(fs.createReadStream('./package.json'))
-	.pipe(split2())
-	.pipe(line => {
-	  const matched = line.match(/^ {2}"name": "(\w+?)",$/);
-	  if (matched && matched[1]) {
-	    actual = matched[1];
-	  }
-	})
-	.start();
-    assert.equal(actual, expected);
-  });
-
-  it('"from" accepts object', async function () {
+  it('accepts object', async function () {
     const url = 'https://jsonplaceholder.typicode.com/posts';
     let expectPostCount = -1;
     let actualPostCount = 0;
 
-    await streamFrom({url})
+    await hole({url})
 	.pipe(async function ({url}) {
 	  const posts = await fetch(url)
 	      .then(res => res.text())
@@ -57,7 +42,7 @@ describe('Hole', function () {
     assert.equal(actualPostCount, expectPostCount);
   });
 
-  it('"fromArray" accepts array', async function () {
+  it('holeWithArray accepts array', async function () {
     const expected = [
       {upper: 'A'},
       {upper: 'B'},
@@ -66,7 +51,7 @@ describe('Hole', function () {
       {upper: 'E'},
     ];
     const actual = [];
-    await streamFromArray(['a', 'b', 'c', 'd', 'e'])
+    await holeWithArray(['a', 'b', 'c', 'd', 'e'])
 	.pipe(letter => letter.toUpperCase())
 	.pipe(async (letter) => {
 	  await timeout(Math.random() * 100);
@@ -75,6 +60,21 @@ describe('Hole', function () {
 	.pipe(upper => actual.push({upper}))
 	.start();
     assert.deepStrictEqual(actual, expected);
+  });
+
+  it('holeWithStream accepts readable stream', async function () {
+    const expected = 'hole';
+    let actual = '';
+    await holeWithStream(fs.createReadStream('./package.json'))
+	.pipe(split2())
+	.pipe(line => {
+	  const matched = line.match(/^ {2}"name": "(\w+?)",$/);
+	  if (matched && matched[1]) {
+	    actual = matched[1];
+	  }
+	})
+	.start();
+    assert.equal(actual, expected);
   });
 });
 

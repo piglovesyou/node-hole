@@ -9,32 +9,28 @@ import {Transform, Writable} from 'stream';
 
 const defaultWritableHighWaterMark = getDefaultWritableHighWaterMark();
 
-export default hole;
-export {holeFromArray as fromArray};
-export {holeFromObject as from};
-
-type Gate = ((data: any) => (any | Promise<any>))
+export type Gate = ((data: any) => (any | Promise<any>))
     | stream$Readable
     | stream$Writable
     | stream$Transform;
 
-type HoleStream = {
+export type HoleStream = {
   pipe: (Gate) => HoleStream,
   pieces: () => HoleStream,
   start: () => Promise<any>
 };
 
-function hole(readable: stream$Readable): HoleStream {
+export function holeWithStream(readable: stream$Readable): HoleStream {
   const gates = [readable];
   return createInstance(gates);
 }
 
-function holeFromArray(array: Array<Gate>): HoleStream {
-  return hole(streamify(array));
+export function holeWithArray(array: Array<Gate>): HoleStream {
+  return holeWithStream(streamify(array));
 }
 
-function holeFromObject(obj: Gate): HoleStream {
-  return holeFromArray([obj]);
+export default function hole(obj: Gate): HoleStream {
+  return holeWithArray([obj]);
 }
 
 function pipe(rest: Array<Gate>, newFn: Gate): HoleStream {
