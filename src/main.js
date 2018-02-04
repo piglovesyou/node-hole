@@ -55,6 +55,8 @@ function createInstance(gates: Array<GateInfo>): Hole {
     pipe: pipe.bind(null, gates),
     pieces: pieces.bind(null, gates),
     filter: filter.bind(null, gates),
+    // TODO: want something like
+    // 	hole().collect(3).pipe(([v1, v2, v3] => {...})
     start: start.bind(null, gates),
   };
 }
