@@ -45,7 +45,8 @@ async function main() {
                 title: post.title,
                 comments: comments.map(c => c.body),
             };
-        }, {highWaterMark: 4})  // You can adjust limit of simultanious running tasks, which is 16 by default
+        }, {highWaterMark: 4})  // You can adjust limit of simultanious running tasks,
+                                // which is 16 by default
         .pipe((post) => {
           assert(typeof post.id === 'number');
           assert(typeof post.title === 'string');
