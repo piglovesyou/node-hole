@@ -17,7 +17,7 @@
     "check": "flow check",
     "test": "npm run check && mocha --require @babel/register",
     "build": "babel --out-dir lib src && flow-copy-source src lib",
-    "postinstall": "flow-typed install"
+    "prepublish": "flow-typed install"
   },
   "files": [
     "lib",

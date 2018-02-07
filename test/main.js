@@ -7,7 +7,7 @@ import fetch from 'node-fetch';
 import split2 from 'split2';
 
 describe('Hole', function () {
-  this.timeout(10 * 1000);
+  this.timeout(30 * 1000);
 
   it('accepts object', async function () {
     const url = 'https://jsonplaceholder.typicode.com/posts';
