@@ -20,7 +20,8 @@
     "prepublish": "flow-typed install"
   },
   "files": [
-    "lib"
+    "lib",
+    "package-lock.json"
   ],
   "author": "thepiglovesyou@gmail.com",
   "repository": "git@github.com:piglovesyou/node-hole.git",
