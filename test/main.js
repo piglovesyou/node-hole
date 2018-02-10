@@ -93,7 +93,7 @@ describe('Hole', function () {
     assert.deepStrictEqual(expected, actual);
   });
 
-  it.only('.stop() postpones streaming and .start() launches it', async function () {
+  it('.stop() postpones streaming and .start() launches it', async function () {
     const expected = 'yeah';
     let actual = '';
     const waiting = hole({value: 'yeah'})

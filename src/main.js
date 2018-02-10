@@ -41,6 +41,8 @@ export default function hole(obj: any): Hole {
 
 export class Hole extends LazyPromise {
 
+  _readable: stream$Readable;
+
   _gates: Array<GateInfo>;
 
   _stop: boolean;
@@ -48,11 +50,13 @@ export class Hole extends LazyPromise {
   constructor(readable: stream$Readable) {
     super(_start);
 
+    this._readable = readable;
+
     function _start(resolve: Function, reject: Function) {
-      const [[readable], ...rest] = this._gates;
+      // const [[readable], ...rest] = this._gates;
       const streams = [
-	readable,
-	...(rest.map(([fn, opts]) => {
+	this._readable,
+	...(this._gates.map(([fn, opts]) => {
 	  if (isStream(fn)) return fn;
 
 	  const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
@@ -76,7 +80,7 @@ export class Hole extends LazyPromise {
       pump.apply(null, streams);
     }
 
-    this._gates = [[readable, {}]];
+    this._gates = [];
     setImmediate(() => {
       if (this._stop === true) return;
       this.then(noop);
