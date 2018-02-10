@@ -61,3 +61,4 @@ node-hole.iml
 
 /lib
 /flow-typed
+/_*.js
