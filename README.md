@@ -12,7 +12,7 @@ Node Hole offers a fun, easy and efficient way of parallel data consuming by wra
 To install `hole` in your project, run:
 
 ```bash
-$ npm add piglovesyou/node-hole
+$ npm install hole
 ```
 
 Then utilize it like below:
