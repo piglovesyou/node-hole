@@ -39,8 +39,7 @@ describe('Hole', function () {
 	  assert(typeof out.title === 'string');
 	  assert(Array.isArray(out.comments));
 	  actualPostCount = actualPostCount + 1;
-	})
-	.start();
+	});
     assert.equal(actualPostCount, expectPostCount);
   });
 
@@ -59,8 +58,7 @@ describe('Hole', function () {
 	  await timeout(Math.random() * 100);
 	  return letter;
 	})
-	.pipe(upper => actual.push({upper}))
-	.start();
+	.pipe(upper => actual.push({upper}));
     assert.deepStrictEqual(actual, expected);
   });
 
@@ -74,8 +72,7 @@ describe('Hole', function () {
 	  if (matched && matched[1]) {
 	    actual = matched[1];
 	  }
-	})
-	.start();
+	});
     assert.equal(actual, expected);
   });
 
@@ -92,8 +89,7 @@ describe('Hole', function () {
 	})
 	.pipe((n) => {
 	  return actual.push(n);
-	})
-	.start();
+	});
     assert.deepStrictEqual(expected, actual);
   });
 });

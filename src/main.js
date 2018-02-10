@@ -6,6 +6,7 @@ import streamify from 'stream-array';
 import isStream from 'is-stream';
 import parallelTransform from 'parallel-transform';
 import {Transform, Writable} from 'stream';
+import LazyPromise from 'lazy-promise';
 
 const defaultWritableHighWaterMark = getDefaultWritableHighWaterMark();
 
@@ -38,12 +39,48 @@ export default function hole(obj: any): Hole {
   return holeWithArray([obj]);
 }
 
-export class Hole {
+export class Hole extends LazyPromise {
 
   gates: Array<GateInfo>;
 
+  _stop: boolean;
+
   constructor(readable: stream$Readable) {
+    super(_start);
+
+    function _start(resolve: Function, reject: Function) {
+      const [[readable], ...rest] = this.gates;
+      const streams = [
+	readable,
+	...(rest.map(([fn, opts]) => {
+	  if (isStream(fn)) return fn;
+
+	  const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
+	  return parallelTransform(highWaterMark, opts, function (obj, callback) {
+	    if (typeof fn !== 'function') throw new Error('cant be reached');
+	    const rv = fn.call(this, obj);
+	    if (isPromise(rv)) {
+	      if (typeof rv.then !== 'function') throw new Error('cant be reached');
+	      rv.then(resolved => {
+		callback(null, resolved);
+	      });
+	      return;
+	    }
+	    callback(null, rv);
+	  });
+	})),
+	(error) => {
+	  if (error) reject(error); else resolve();
+	}
+      ];
+      pump.apply(null, streams);
+    }
+
     this.gates = [[readable, {}]];
+    setImmediate(() => {
+      if (this._stop === true) return;
+      this.then(noop);
+    });
   }
 
   pipe(gate: Gate, opts: GateOption = {}): Hole {
@@ -104,37 +141,18 @@ export class Hole {
 
   // TODO: want something like
   // hole().collect(3).pipe(([v1, v2, v3] => {...})
+  stop(): Hole {
+    this._stop = true;
+    return this;
+  }
 
-  start(): Promise<void> {
-    const [[readable], ...rest] = this.gates;
-    return new Promise((resolve, reject) => {
-      const streams = [
-	readable,
-	...(rest.map(([fn, opts]) => {
-	  if (isStream(fn)) return fn;
-
-	  const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
-	  return parallelTransform(highWaterMark, opts, function (obj, callback) {
-	    if (typeof fn !== 'function') throw new Error('cant be reached');
-	    const rv = fn.call(this, obj);
-	    if (isPromise(rv)) {
-	      if (typeof rv.then !== 'function') throw new Error('cant be reached');
-	      rv.then(resolved => {
-		callback(null, resolved);
-	      });
-	      return;
-	    }
-	    callback(null, rv);
-	  });
-	})),
-	(error) => {
-	  if (error) reject(error); else resolve();
-	}
-      ];
-      pump.apply(null, streams);
-    });
+  start(): Hole {
+    this.then(noop);
+    return this;
   }
 }
+
+function noop() {}
 
 function getDefaultWritableHighWaterMark() {
   const w = new Writable({objectMode: true});
