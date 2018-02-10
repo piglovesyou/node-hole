@@ -39,7 +39,7 @@ export default function hole(obj: any): Hole {
   return holeWithArray([obj]);
 }
 
-function createTransform(opts, fn, finalize) {
+function createTransform(opts, fn, finalize: (passed: any, resolved: any, callback: Function)) {
   return parallelTransform(opts.highWaterMark || defaultWritableHighWaterMark, opts, function (obj, callback) {
     if (typeof fn !== 'function') throw new Error('cant be reached');
     const rv = fn.call(this, obj);
@@ -69,7 +69,6 @@ export class Hole extends LazyPromise {
     this._readable = readable;
 
     function _start(resolve: Function, reject: Function) {
-      // const [[readable], ...rest] = this._gates;
       const streams = [
 	this._readable,
 	...(this._gates.map((gate, i, gates) => toStream(gate, i === gates.length - 1))),
@@ -87,7 +86,7 @@ export class Hole extends LazyPromise {
 	    callback();
 	    return;
 	  }
-	  callback(null,  resolved);
+	  callback(null, resolved);
 	});
       }
 
@@ -102,6 +101,8 @@ export class Hole extends LazyPromise {
   }
 
   pipe(gate: Gate, opts: GateOption = {}): Hole {
+    // To be sure what's the last gate, to make it writable instead of transform,
+    // Hole just stores the functions until it starts
     this._gates = [...this._gates, [gate, opts]];
     return this;
   }
@@ -131,7 +132,15 @@ export class Hole extends LazyPromise {
     if (typeof fn !== 'function') {
       throw new Error('.filter() only accepts function');
     }
-    // TODO: Refac duplication of using parallelTransform
+    const t = createTransform(opts, fn, (passed, resolved, callback) => {
+      if (Boolean(rv)) {
+	callback(null, obj);
+	return;
+      }
+      // Pass through without read
+      callback();
+    });
+
     const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
     const t = parallelTransform(highWaterMark, opts, function (obj, callback) {
       if (typeof fn !== 'function') throw new Error('cant be reached');
