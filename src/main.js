@@ -39,6 +39,22 @@ export default function hole(obj: any): Hole {
   return holeWithArray([obj]);
 }
 
+function createTransform(opts, fn, finalize) {
+  return parallelTransform(opts.highWaterMark || defaultWritableHighWaterMark, opts, function (obj, callback) {
+    if (typeof fn !== 'function') throw new Error('cant be reached');
+    const rv = fn.call(this, obj);
+
+    if (isPromise(rv)) {
+      if (typeof rv.then !== 'function') throw new Error('cant be reached');
+      rv.then(resolved => {
+	finalize(obj, resolved, callback);
+      });
+      return;
+    }
+    finalize(obj, rv, callback);
+  });
+}
+
 export class Hole extends LazyPromise {
 
   _readable: stream$Readable;
@@ -56,35 +72,22 @@ export class Hole extends LazyPromise {
       // const [[readable], ...rest] = this._gates;
       const streams = [
 	this._readable,
-	...(this._gates.map((gate, i, gates) => turnToStream(gate, i === gates.length - 1))),
+	...(this._gates.map((gate, i, gates) => toStream(gate, i === gates.length - 1))),
 	(error) => {
 	  if (error) reject(error); else resolve();
 	}
       ];
 
-      function turnToStream([fn, opts], isLast) {
+      function toStream([fn, opts], isLast) {
 	if (isStream(fn)) return fn;
 
-	const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
-	return parallelTransform(highWaterMark, opts, function (obj, callback) {
-	  if (typeof fn !== 'function') throw new Error('cant be reached');
-	  const rv = fn.call(this, obj);
-
-	  if (isPromise(rv)) {
-	    if (typeof rv.then !== 'function') throw new Error('cant be reached');
-	    rv.then(finalize);
+	return createTransform(opts, fn, (passed, resolved, callback) => {
+	  // Last transform should behave writable stream so that it's never stuck
+	  if (isLast) {
+	    callback();
 	    return;
 	  }
-	  finalize(rv);
-
-	  // Last transform should behave writable stream so that it's never stuck
-	  function finalize(value) {
-	    if (isLast) {
-	      callback();
-	      return;
-	    }
-	    callback(null, value);
-	  }
+	  callback(null,  resolved);
 	});
       }
 
