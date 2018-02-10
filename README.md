@@ -77,7 +77,7 @@ const nameColumnIndex = 3;
 holeWithStream(fs.createReadableStream('./data.csv'))
     .pipe(csv2())
     .pipe(record => record[nameColumnIndex])
-    .pipe(console.log);  // James
+    .pipe(console.log); // James
                         // John
                         // Robert
                         // Michael
