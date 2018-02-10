@@ -39,62 +39,22 @@ export default function hole(obj: any): Hole {
   return holeWithArray([obj]);
 }
 
-function createTransform(opts, fn, finalize: (passed: any, resolved: any, callback: Function) => void): stream$Transform {
-  return parallelTransform(opts.highWaterMark || defaultWritableHighWaterMark, opts, function (obj, callback) {
-    if (typeof fn !== 'function') throw new Error('cant be reached');
-    const rv = fn.call(this, obj);
-
-    if (isPromise(rv)) {
-      if (typeof rv.then !== 'function') throw new Error('cant be reached');
-      rv.then(resolved => {
-	finalize(obj, resolved, callback);
-      });
-      return;
-    }
-    finalize(obj, rv, callback);
-  });
-}
-
 export class Hole extends LazyPromise {
-
   _readable: stream$Readable;
-
   _gates: Array<GateInfo>;
-
   _stop: boolean;
 
   constructor(readable: stream$Readable) {
     super(_start);
-
     this._readable = readable;
-
-    function _start(resolve: Function, reject: Function) {
-      const streams = [
-	this._readable,
-	...(this._gates.map((gate, i, gates) => toStream(gate, i === gates.length - 1))),
-	(error) => {
-	  if (error) reject(error); else resolve();
-	}
-      ];
-
-      function toStream([fn, opts], isLast) {
-	if (isStream(fn)) return fn;
-
-	return createTransform(opts, fn, (passed, resolved, callback) => {
-	  // Last transform should behave writable stream so that it's never stuck
-	  if (isLast) {
-	    callback();
-	    return;
-	  }
-	  callback(null, resolved);
-	});
-      }
-
-      pump.apply(null, streams);
-    }
-
     this._gates = [];
+    this._stop = false;
+
+    // Hole starts streaming soon by default
     setImmediate(() => {
+      if (this._gates.length <= 0) {
+        throw new Error('Hole requires at least 1 ".pipe(fn)" call.')
+      }
       if (this._stop === true) return;
       this.then(noop);
     });
@@ -154,6 +114,48 @@ export class Hole extends LazyPromise {
     this.then(noop);
     return this;
   }
+}
+
+function _start(resolve: Function, reject: Function) {
+  const streams = [
+    this._readable,
+    ...(this._gates.map((gate, i, gates) => toStream(gate, i === gates.length - 1))),
+    (error) => {
+      if (error) reject(error); else resolve();
+    }
+  ];
+
+  function toStream([fn, opts], isLast) {
+    if (isStream(fn)) return fn;
+
+    return createTransform(opts, fn, (passed, resolved, callback) => {
+      // Last transform should behave writable stream so that it's never stuck
+      if (isLast) {
+	callback();
+	return;
+      }
+      callback(null, resolved);
+    });
+  }
+
+  pump.apply(null, streams);
+}
+
+
+function createTransform(opts, fn, finalize: (passed: any, resolved: any, callback: Function) => void): stream$Transform {
+  return parallelTransform(opts.highWaterMark || defaultWritableHighWaterMark, opts, function (obj, callback) {
+    if (typeof fn !== 'function') throw new Error('cant be reached');
+    const rv = fn.call(this, obj);
+
+    if (isPromise(rv)) {
+      if (typeof rv.then !== 'function') throw new Error('cant be reached');
+      rv.then(resolved => {
+	finalize(obj, resolved, callback);
+      });
+      return;
+    }
+    finalize(obj, rv, callback);
+  });
 }
 
 function noop() {}

@@ -17,8 +17,7 @@
     "check": "flow check",
     "test": "npm run check && mocha --require @babel/register",
     "build": "babel --out-dir lib src && flow-copy-source src lib",
-    "prepublish": "flow-typed install && npm test && npm run build"
-  },
+    "prepublish": "flow-typed install && npm test && npm run build"},
   "files": [
     "lib",
     "package-lock.json"
