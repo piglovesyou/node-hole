@@ -16,7 +16,7 @@ type stream$writableStreamOptions = {
   objectMode?: boolean
 };
 
-type GateOption = {} | stream$writableStreamOptions;
+export type GateOption = {} | stream$writableStreamOptions;
 
 export type Gate = ((data: any) => any)
     | ((data: any) => Promise<any>)
@@ -24,18 +24,10 @@ export type Gate = ((data: any) => any)
     | stream$Writable
     | stream$Transform;
 
-type GateInfo = [Gate, GateOption];
-
-export type Hole = {
-  pipe: (Gate, opts?: GateOption) => Hole,
-  filter: (Gate, opts?: GateOption) => Hole,
-  pieces: () => Hole,
-  start: () => Promise<any>
-};
+export type GateInfo = [Gate, GateOption];
 
 export function holeWithStream(readable: stream$Readable): Hole {
-  const gates = [[readable, {}]];
-  return createInstance(gates);
+  return new Hole(readable);
 }
 
 export function holeWithArray(array: Array<any>): Hole {
@@ -46,97 +38,102 @@ export default function hole(obj: any): Hole {
   return holeWithArray([obj]);
 }
 
-function pipe(rest: Array<GateInfo>, newFn: Gate, opts: GateOption = {}): Hole {
-  return createInstance([...rest, [newFn, opts]]);
-}
+export class Hole {
 
-function createInstance(gates: Array<GateInfo>): Hole {
-  return {
-    pipe: pipe.bind(null, gates),
-    pieces: pieces.bind(null, gates),
-    filter: filter.bind(null, gates),
-    // TODO: want something like
-    // 	hole().collect(3).pipe(([v1, v2, v3] => {...})
-    start: start.bind(null, gates),
-  };
-}
+  gates: Array<GateInfo>;
 
-function filter(gates: Array<GateInfo>, fn: Gate, opts?: GateOption = {}): Hole {
-  if (typeof fn !== 'function') {
-    throw new Error('.filter() only accepts function');
+  constructor(readable: stream$Readable) {
+    this.gates = [[readable, {}]];
   }
-  // TODO: Refac duplication of using parallelTransform
-  const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
-  const t = parallelTransform(highWaterMark, opts, function (obj, callback) {
-    if (typeof fn !== 'function') throw new Error('cant be reached');
-    const rv = fn.call(this, obj);
-    if (isPromise(rv)) {
-      if (typeof rv.then !== 'function') throw new Error('cant be reached');
-      rv.then(resolved => {
-	if (Boolean(resolved)) {
-	  callback(null, obj);
-	  return;
+
+  pipe(gate: Gate, opts: GateOption = {}): Hole {
+    this.gates = [...this.gates, [gate, opts]];
+    return this;
+  }
+
+  pieces() {
+    const gate = new Transform({
+      objectMode: true,
+      transform: function (chunks, enc, callback) {
+	if (!Array.isArray(chunks)) {
+	  throw new Error('.pieces() must receive an array from previous function.');
 	}
+	push.call(this, chunks, 0);
 	callback();
-      });
-      return;
-    }
-    if (Boolean(rv)) {
-      callback(null, obj);
-      return;
-    }
-    callback();
-  });
-  return createInstance([...gates, [t, {}]]);
-}
 
-function pieces(gates: Array<GateInfo>): Hole {
-  const t = new Transform({
-    objectMode: true,
-    transform: function (chunks, enc, callback) {
-      if (!Array.isArray(chunks)) {
-	throw new Error('.pieces() must receive an array from previous function.');
+	function push(chunks, curr) {
+	  if (!chunks[curr]) return;
+	  this.push(chunks[curr]);
+	  push.call(this, chunks, curr + 1);
+	}
       }
-      push.call(this, chunks, 0);
-      callback();
+    });
+    this.gates = [...this.gates, [gate, {}]];
+    return this;
+  }
 
-      function push(chunks, curr) {
-	if (!chunks[curr]) return;
-	this.push(chunks[curr]);
-	push.call(this, chunks, curr + 1);
-      }
+  filter(fn: Gate, opts?: GateOption = {}): Hole {
+    if (typeof fn !== 'function') {
+      throw new Error('.filter() only accepts function');
     }
-  });
-  return createInstance([...gates, [t, {}]]);
-}
-
-function start([[readable], ...rest]: Array<GateInfo>): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const streams = [
-      readable,
-      ...(rest.map(([fn, opts]) => {
-	if (isStream(fn)) return fn;
-
-	const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
-	return parallelTransform(highWaterMark, opts, function (obj, callback) {
-	  if (typeof fn !== 'function') throw new Error('cant be reached');
-	  const rv = fn.call(this, obj);
-	  if (isPromise(rv)) {
-	    if (typeof rv.then !== 'function') throw new Error('cant be reached');
-	    rv.then(resolved => {
-	      callback(null, resolved);
-	    });
+    // TODO: Refac duplication of using parallelTransform
+    const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
+    const t = parallelTransform(highWaterMark, opts, function (obj, callback) {
+      if (typeof fn !== 'function') throw new Error('cant be reached');
+      const rv = fn.call(this, obj);
+      if (isPromise(rv)) {
+	if (typeof rv.then !== 'function') throw new Error('cant be reached');
+	rv.then(resolved => {
+	  if (Boolean(resolved)) {
+	    callback(null, obj);
 	    return;
 	  }
-	  callback(null, rv);
+	  callback();
 	});
-      })),
-      (error) => {
-	if (error) reject(error); else resolve();
+	return;
       }
-    ];
-    pump.apply(null, streams);
-  });
+      if (Boolean(rv)) {
+	callback(null, obj);
+	return;
+      }
+      callback();
+    });
+    this.gates = [...this.gates, [t, {}]];
+    return this;
+  }
+
+  // TODO: want something like
+  // hole().collect(3).pipe(([v1, v2, v3] => {...})
+
+  start(): Promise<void> {
+    const [[readable], ...rest] = this.gates;
+    return new Promise((resolve, reject) => {
+      const streams = [
+	readable,
+	...(rest.map(([fn, opts]) => {
+	  if (isStream(fn)) return fn;
+
+	  const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
+	  return parallelTransform(highWaterMark, opts, function (obj, callback) {
+	    if (typeof fn !== 'function') throw new Error('cant be reached');
+	    const rv = fn.call(this, obj);
+	    if (isPromise(rv)) {
+	      if (typeof rv.then !== 'function') throw new Error('cant be reached');
+	      rv.then(resolved => {
+		callback(null, resolved);
+	      });
+	      return;
+	    }
+	    callback(null, rv);
+	  });
+	})),
+	(error) => {
+	  if (error) reject(error); else resolve();
+	}
+      ];
+      pump.apply(null, streams);
+    });
+  }
 }
 
 function getDefaultWritableHighWaterMark() {
