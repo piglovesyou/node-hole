@@ -52,10 +52,8 @@ async function main() {
           assert(typeof post.title === 'string');
           assert(Array.isArray(post.comments));
         })
-        .start()    // Don't forget to call ".start()" that starts streaming.
-                    // It returns a promise object so that you can control additional async flow
-        .catch((err) => console.log(err))   // Because ".start()" returns a promise that emits rejection
-                                            // during a stream, you can catch it as usual
+        .catch((err) => console.log(err))   // Because Hole extends Promise, it emits rejection and halts
+                                            // during a stream, which you can catch as usual
 
     console.log('done.');
 }
@@ -79,12 +77,11 @@ const nameColumnIndex = 3;
 holeWithStream(fs.createReadableStream('./data.csv'))
     .pipe(csv2())
     .pipe(record => record[nameColumnIndex])
-    .pipe(console.log)  // James
+    .pipe(console.log);  // James
                         // John
                         // Robert
                         // Michael
                         // ...
-    .start();
 ```
 
 ## Chaining functions of `Hole`
@@ -92,7 +89,6 @@ holeWithStream(fs.createReadableStream('./data.csv'))
 #### `.pipe(fn: Gate, opts: GateOption): Hole`
 #### `.filter(fn: Gate, opts: GateOption): Hole`
 #### `.pieces(): Hole`
-#### `.start(): Promise<void>`
 
 ## Data types
 
