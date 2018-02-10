@@ -92,6 +92,20 @@ describe('Hole', function () {
 	});
     assert.deepStrictEqual(expected, actual);
   });
+
+  it.only('.stop() postpones streaming and .start() launches it', async function () {
+    const expected = 'yeah';
+    let actual = '';
+    const waiting = hole({value: 'yeah'})
+	.pipe((obj) => {
+	  actual = obj.value;
+	})
+	.stop();
+    await timeout(100);
+    assert.equal(actual, '');
+    await waiting.start();
+    assert.equal(actual, expected);
+  });
 });
 
 function timeout(ms) {
