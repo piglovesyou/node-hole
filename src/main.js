@@ -39,7 +39,7 @@ export default function hole(obj: any): Hole {
   return holeWithArray([obj]);
 }
 
-function createTransform(opts, fn, finalize: (passed: any, resolved: any, callback: Function)) {
+function createTransform(opts, fn, finalize: (passed: any, resolved: any, callback: Function) => void): stream$Transform {
   return parallelTransform(opts.highWaterMark || defaultWritableHighWaterMark, opts, function (obj, callback) {
     if (typeof fn !== 'function') throw new Error('cant be reached');
     const rv = fn.call(this, obj);
@@ -133,31 +133,8 @@ export class Hole extends LazyPromise {
       throw new Error('.filter() only accepts function');
     }
     const t = createTransform(opts, fn, (passed, resolved, callback) => {
-      if (Boolean(rv)) {
-	callback(null, obj);
-	return;
-      }
-      // Pass through without read
-      callback();
-    });
-
-    const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
-    const t = parallelTransform(highWaterMark, opts, function (obj, callback) {
-      if (typeof fn !== 'function') throw new Error('cant be reached');
-      const rv = fn.call(this, obj);
-      if (isPromise(rv)) {
-	if (typeof rv.then !== 'function') throw new Error('cant be reached');
-	rv.then(resolved => {
-	  if (Boolean(resolved)) {
-	    callback(null, obj);
-	    return;
-	  }
-	  callback();
-	});
-	return;
-      }
-      if (Boolean(rv)) {
-	callback(null, obj);
+      if (Boolean(resolved)) {
+	callback(null, passed);
 	return;
       }
       callback();
