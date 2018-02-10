@@ -41,7 +41,7 @@ export default function hole(obj: any): Hole {
 
 export class Hole extends LazyPromise {
 
-  gates: Array<GateInfo>;
+  _gates: Array<GateInfo>;
 
   _stop: boolean;
 
@@ -49,7 +49,7 @@ export class Hole extends LazyPromise {
     super(_start);
 
     function _start(resolve: Function, reject: Function) {
-      const [[readable], ...rest] = this.gates;
+      const [[readable], ...rest] = this._gates;
       const streams = [
 	readable,
 	...(rest.map(([fn, opts]) => {
@@ -76,7 +76,7 @@ export class Hole extends LazyPromise {
       pump.apply(null, streams);
     }
 
-    this.gates = [[readable, {}]];
+    this._gates = [[readable, {}]];
     setImmediate(() => {
       if (this._stop === true) return;
       this.then(noop);
@@ -84,7 +84,7 @@ export class Hole extends LazyPromise {
   }
 
   pipe(gate: Gate, opts: GateOption = {}): Hole {
-    this.gates = [...this.gates, [gate, opts]];
+    this._gates = [...this._gates, [gate, opts]];
     return this;
   }
 
@@ -105,7 +105,7 @@ export class Hole extends LazyPromise {
 	}
       }
     });
-    this.gates = [...this.gates, [gate, {}]];
+    this._gates = [...this._gates, [gate, {}]];
     return this;
   }
 
@@ -135,7 +135,7 @@ export class Hole extends LazyPromise {
       }
       callback();
     });
-    this.gates = [...this.gates, [t, {}]];
+    this._gates = [...this._gates, [t, {}]];
     return this;
   }
 
