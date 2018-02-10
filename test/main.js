@@ -84,7 +84,7 @@ describe('Hole', function () {
 	  return letter;
 	})
 	.pipe(upper => {
-	  return actualOrdered.push({upper});
+	  return actualOrdered.push(upper);
 	});
     assert.notDeepEqual(actualUnordered, expected);
     assert.deepStrictEqual(actualOrdered, expected);
