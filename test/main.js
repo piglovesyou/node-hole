@@ -9,6 +9,20 @@ import split2 from 'split2';
 describe('Hole', function () {
   this.timeout(30 * 1000);
 
+  it('hole(obj) takes object', async function () { });
+  it('holeWithArray(array) takes array', async function () { });
+  it('holeWithStream(readable) takes readable', async function () { });
+  it('.pipe(fn) transforms data', async function () { });
+  it('.pipe(async fn) transforms data asyncronously', async function () { });
+  it('.pipe(async fn) simaltaniously consumes multiple data', async function () { });
+  it('.pipe(async fn) keeps order', async function () { });
+  it('.pipe(transform) accepts native transform', async function () { });
+  it('.pipe(transform) accepts third party transform', async function () { });
+  it('last .pipe(fn) does not store data in readable buffer even if it returns it', async function () { });
+  it('.filter(fn) keeps order', async function () { });
+  it('.filter(async fn) keeps order', async function () { });
+  it('.piece() splits an passed array', async function () { });
+
   it('accepts object', async function () {
     const url = 'https://jsonplaceholder.typicode.com/posts';
     let expectPostCount = -1;
