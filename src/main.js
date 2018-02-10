@@ -56,27 +56,38 @@ export class Hole extends LazyPromise {
       // const [[readable], ...rest] = this._gates;
       const streams = [
 	this._readable,
-	...(this._gates.map(([fn, opts]) => {
-	  if (isStream(fn)) return fn;
-
-	  const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
-	  return parallelTransform(highWaterMark, opts, function (obj, callback) {
-	    if (typeof fn !== 'function') throw new Error('cant be reached');
-	    const rv = fn.call(this, obj);
-	    if (isPromise(rv)) {
-	      if (typeof rv.then !== 'function') throw new Error('cant be reached');
-	      rv.then(resolved => {
-		callback(null, resolved);
-	      });
-	      return;
-	    }
-	    callback(null, rv);
-	  });
-	})),
+	...(this._gates.map((gate, i, gates) => turnToStream(gate, i === gates.length - 1))),
 	(error) => {
 	  if (error) reject(error); else resolve();
 	}
       ];
+
+      function turnToStream([fn, opts], isLast) {
+	if (isStream(fn)) return fn;
+
+	const highWaterMark = opts.highWaterMark || defaultWritableHighWaterMark;
+	return parallelTransform(highWaterMark, opts, function (obj, callback) {
+	  if (typeof fn !== 'function') throw new Error('cant be reached');
+	  const rv = fn.call(this, obj);
+
+	  if (isPromise(rv)) {
+	    if (typeof rv.then !== 'function') throw new Error('cant be reached');
+	    rv.then(finalize);
+	    return;
+	  }
+	  finalize(rv);
+
+	  // Last transform should behave writable stream so that it's never stuck
+	  function finalize(value) {
+	    if (isLast) {
+	      callback();
+	      return;
+	    }
+	    callback(null, value);
+	  }
+	});
+      }
+
       pump.apply(null, streams);
     }
 
