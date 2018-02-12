@@ -215,20 +215,34 @@ describe('Hole', function () {
     let actual = null;
     let i = 0;
     const size = expect;
-    const r = new stream.Readable({
-      read: function () {
-	this.push(i < size ? i++ : null);
-      },
-      objectMode: true,
-    });
+    const r = createReadable(expect);
     await holeWithStream(r)
 	.pipe(async i => {
 	  await timeout(Math.random() * 10);
-	  // console.log(i);
 	  return i;
 	}, {highWaterMark: 32})
 	.pipe(i => {
 	  actual = i + 1;
+	});
+    assert.deepStrictEqual(actual, expect);
+  });
+
+  it('.pipe() and .filter() accept eitherstream option or highWaterMark number', async function () {
+    const expect = 500;
+    let actual = null;
+    let i = 0;
+    const r = createReadable(1000)
+    await holeWithStream(r)
+	.pipe(async i => {
+	  await timeout(Math.random() * 10);
+	  return i;
+	}, 32)
+	.filter(async i => {
+	  await timeout(Math.random() * 10);
+	  return 500 <= i;
+	}, 32)
+	.pipe(async i => {
+	  actual = actual + 1;
 	});
     assert.deepStrictEqual(actual, expect);
   });
@@ -270,4 +284,15 @@ describe('Hole', function () {
 
 function timeout(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function createReadable(size) {
+  let i = 0;
+  const r = new stream.Readable({
+    read: function () {
+      this.push(i < size ? i++ : null);
+    },
+    objectMode: true,
+  });
+  return r;
 }

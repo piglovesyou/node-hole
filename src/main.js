@@ -17,7 +17,7 @@ type stream$writableStreamOptions = {
   objectMode?: boolean
 };
 
-export type GateOption = {} | stream$writableStreamOptions;
+export type GateOption = stream$writableStreamOptions | number;
 
 export type Gate = ((data: any) => any)
     | ((data: any) => Promise<any>)
@@ -61,6 +61,9 @@ export class Hole extends LazyPromise {
   }
 
   pipe(gate: Gate, opts: GateOption = {}): Hole {
+    if (typeof opts === 'number') {
+      opts = {highWaterMark: opts};
+    }
     // To be sure what's the last gate, to make it writable instead of transform,
     // Hole just stores the functions until it starts
     this._gates = [...this._gates, [gate, opts]];
@@ -91,6 +94,9 @@ export class Hole extends LazyPromise {
   filter(fn: Gate, opts?: GateOption = {}): Hole {
     if (typeof fn !== 'function') {
       throw new Error('.filter() only accepts function');
+    }
+    if (typeof opts === 'number') {
+      opts = {highWaterMark: opts};
     }
     const t = createTransform(opts, fn, (passed, resolved, callback) => {
       if (Boolean(resolved)) {
@@ -147,7 +153,7 @@ That means "end of stream" in Node Stream. If you want to continue the stream, r
   }
 }
 
-function createTransform(opts, fn, finalize: (passed: any, resolved: any, callback: Function) => void): stream$Transform {
+function createTransform(opts: stream$writableStreamOptions, fn, finalize: (passed: any, resolved: any, callback: Function) => void): stream$Transform {
   return parallelTransform(opts.highWaterMark || defaultWritableHighWaterMark, opts, function (obj, callback) {
     if (typeof fn !== 'function') throw new Error('cant be reached');
     const rv = fn.call(this, obj);
