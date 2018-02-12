@@ -12,7 +12,7 @@ describe('Hole', function () {
 
   it('hole(obj) takes object', async function () {
     const expect = {ohh: 'yeah'};
-    let actual;
+    let actual = {};
     await hole({})
 	.pipe(obj => {
 	  obj.ohh = 'yeah';
@@ -70,7 +70,24 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expected);
   });
 
-  it('.pipe(async fn) transforms data asyncronously', async function () { });
+  it('.pipe(async fn) transforms data asyncronously', async function () {
+    const expected = 5;
+    let actual = 0;
+    setTimeout(() => {
+      assert.deepStrictEqual(actual, expected, 'It should buffer all in the middle');
+    }, 100);
+    await holeWithArray([1,2,3,4,5])
+	.pipe(async n => {
+	  actual++;
+	  await timeout(300);
+	  return n;
+	})
+	.pipe(() => {
+	  actual--;
+	});
+    assert.deepStrictEqual(actual, 0, 'It should be decremented all afterward');
+  });
+
   it('.pipe(async fn) simaltaniously consumes multiple data', async function () { });
   it('.pipe(async fn) keeps order', async function () {
     const expected = ['A', 'B', 'C', 'D', 'E'];

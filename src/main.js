@@ -53,7 +53,7 @@ export class Hole extends LazyPromise {
     // Hole starts streaming soon by default
     setImmediate(() => {
       if (this._gates.length <= 0) {
-        throw new Error('Hole requires at least 1 ".pipe(fn)" call.')
+	throw new Error('Hole requires at least 1 ".pipe(fn)" call.');
       }
       if (this._stop === true) return;
       this.then(noop);
@@ -125,6 +125,8 @@ function _start(resolve: Function, reject: Function) {
     }
   ];
 
+  pump.apply(null, streams);
+
   function toStream([fn, opts], isLast) {
     if (isStream(fn)) return fn;
 
@@ -134,13 +136,16 @@ function _start(resolve: Function, reject: Function) {
 	callback();
 	return;
       }
+      // "return undefined" means end of streaming in Node Stream, which would be
+      // a pitfall for light users. Here Hole warns that case.
+      if (isNullOrUndefined(resolved)) {
+	console.warn(`You returned ${String(resolved)} in the function "${fn.toString()}".
+That means "end of stream" in Node Stream. If you want to continue the stream, return something.`);
+      }
       callback(null, resolved);
     });
   }
-
-  pump.apply(null, streams);
 }
-
 
 function createTransform(opts, fn, finalize: (passed: any, resolved: any, callback: Function) => void): stream$Transform {
   return parallelTransform(opts.highWaterMark || defaultWritableHighWaterMark, opts, function (obj, callback) {
@@ -159,6 +164,10 @@ function createTransform(opts, fn, finalize: (passed: any, resolved: any, callba
 }
 
 function noop() {}
+
+function isNullOrUndefined(obj) {
+  return obj == null;
+}
 
 function getDefaultWritableHighWaterMark() {
   const w = new Writable({objectMode: true});
