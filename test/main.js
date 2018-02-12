@@ -70,13 +70,13 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expected);
   });
 
-  it('.pipe(async fn) transforms data asyncronously', async function () {
+  it('.pipe(async fn) simaltaniously consumes multiple data', async function () {
     const expected = 5;
     let actual = 0;
     setTimeout(() => {
       assert.deepStrictEqual(actual, expected, 'It should buffer all in the middle');
     }, 100);
-    await holeWithArray([1,2,3,4,5])
+    await holeWithArray([1, 2, 3, 4, 5])
 	.pipe(async n => {
 	  actual++;
 	  await timeout(300);
@@ -88,7 +88,6 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, 0, 'It should be decremented all afterward');
   });
 
-  it('.pipe(async fn) simaltaniously consumes multiple data', async function () { });
   it('.pipe(async fn) keeps order', async function () {
     const expected = ['A', 'B', 'C', 'D', 'E'];
     const actualUnordered = [];
@@ -106,7 +105,24 @@ describe('Hole', function () {
     assert.notDeepEqual(actualUnordered, expected);
     assert.deepStrictEqual(actualOrdered, expected);
   });
-  it('.pipe(transform) accepts native transform', async function () { });
+
+  it.only('.pipe(transform) accepts native transform', async function () {
+    const expected = ['A', 'B', 'C', 'D', 'E'];
+    const actual = [];
+    const t = new stream.Transform({
+      transform: function (data, enc, callback) {
+	callback(null,  data.toUpperCase());
+      },
+      objectMode: true,
+    });
+    await holeWithArray(['a', 'b', 'c', 'd', 'e'])
+	.pipe(t)
+	.pipe(letter => {
+	  actual.push(letter);
+	});
+    assert.deepStrictEqual(actual, expected);
+  });
+
   it('.pipe(transform) accepts third party transform', async function () { });
   it('last .pipe(fn) does not store data in readable buffer even if it returns it', async function () { });
   it('.filter(fn) keeps order', async function () { });
