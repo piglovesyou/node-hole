@@ -1,6 +1,6 @@
 {
   "name": "hole",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Async friendly, stream-based task consuming utility in Node.js",
   "keywords": [
     "hole",
