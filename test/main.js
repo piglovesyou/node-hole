@@ -106,12 +106,12 @@ describe('Hole', function () {
     assert.deepStrictEqual(actualOrdered, expected);
   });
 
-  it.only('.pipe(transform) accepts native transform', async function () {
+  it('.pipe(transform) accepts native transform', async function () {
     const expected = ['A', 'B', 'C', 'D', 'E'];
     const actual = [];
     const t = new stream.Transform({
       transform: function (data, enc, callback) {
-	callback(null,  data.toUpperCase());
+	callback(null, data.toUpperCase());
       },
       objectMode: true,
     });
@@ -123,10 +123,63 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expected);
   });
 
-  it('.pipe(transform) accepts third party transform', async function () { });
-  it('last .pipe(fn) does not store data in readable buffer even if it returns it', async function () { });
-  it('.filter(fn) keeps order', async function () { });
-  it('.filter(async fn) keeps order', async function () { });
+  it('.pipe(transform) accepts third party transform', async function () {
+    const expected = '  "name": "hole",';
+    const lines = [];
+    await holeWithStream(fs.createReadStream('./package.json'))
+	.pipe(split2())
+	.pipe((line) => {
+	  lines.push(line);
+	});
+    assert(lines.includes(expected));
+  });
+
+  it('last .pipe(fn) does not store data in readable buffer even if it returns something', async function () {
+    const expected = 999;
+    let actual = null;
+    const largeArray = [
+      ...Array(expected)
+	  .keys()
+    ];
+    await holeWithArray(largeArray)
+	.pipe(index => {
+	  return index;
+	})
+	.pipe(index => {
+	  // If the last transfrom stores the "index" in the readable buffer, it's stuck in the middle.
+	  actual = index + 1;
+	  return index;
+	});
+    assert.deepStrictEqual(actual, expected);
+  });
+
+  it('.filter(fn) filters correctly', async function () {
+    const expect = [5, 6, 7, 8, 9];
+    const actual = [];
+    await holeWithArray([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+	.filter(n => {
+	  return 5 <= n;
+	})
+	.pipe(n => {
+	  actual.push(n);
+	});
+    assert.deepStrictEqual(actual, expect);
+  });
+
+  it('.filter(async fn) keeps order', async function () {
+    const expect = [5, 6, 7, 8, 9];
+    const actual = [];
+    await holeWithArray([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+	.filter(async n => {
+	  await timeout(Math.random() * 200);
+	  return 5 <= n;
+	})
+	.pipe(n => {
+	  actual.push(n);
+	});
+    assert.deepStrictEqual(actual, expect);
+  });
+
   it('.piece() splits an passed array', async function () { });
   it('consumes large number of data', async function () { });
 
@@ -179,23 +232,6 @@ describe('Hole', function () {
 	  }
 	});
     assert.equal(actual, expected);
-  });
-
-  it('.filter() filters correctly', async function () {
-    const expected = [5, 6, 7];
-    const actual = [];
-    await holeWithArray([1, 2, 3, 4, 5, 6, 7, 8])
-	.filter((n) => {
-	  return 5 <= n;
-	})
-	.filter(async (n) => {
-	  await timeout(Math.random() * 100);
-	  return n <= 7;
-	})
-	.pipe((n) => {
-	  return actual.push(n);
-	});
-    assert.deepStrictEqual(expected, actual);
   });
 
   it('.stop() postpones streaming and .start() launches it', async function () {
