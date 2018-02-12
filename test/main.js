@@ -8,7 +8,7 @@ import fetch from 'node-fetch';
 import split2 from 'split2';
 
 describe('Hole', function () {
-  // this.timeout(30 * 1000);
+  this.timeout(30 * 1000);
 
   it('hole(obj) takes object', async function () {
     const expect = {ohh: 'yeah'};
@@ -180,10 +180,60 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expect);
   });
 
-  it('.piece() splits an passed array', async function () { });
-  it('consumes large number of data', async function () { });
+  it('.piece() splits an passed array', async function () {
+    const expect = ['a', 'b', 'c'];
+    let actual = [];
+    await hole({})
+	.pipe(async obj => {
+	  obj.items = ['a', 'b', 'c'];
+	  return obj;
+	})
+	.pipe(obj => obj.items)
+	.pieces()
+	.pipe(item => {
+	  actual.push(item);
+	});
+    assert.deepStrictEqual(actual, expect);
+  });
 
-  it('accepts object', async function () {
+  it('.stop() postpones streaming and .start() launches it', async function () {
+    const expected = 'yeah';
+    let actual = '';
+    const waiting = hole({value: 'yeah'})
+	.pipe((obj) => {
+	  actual = obj.value;
+	})
+	.stop();
+    await timeout(100);
+    assert.equal(actual, '');
+    await waiting.start();
+    assert.equal(actual, expected);
+  });
+
+  it('consumes large number of data', async function () {
+    const expect = 10 * 1000;
+    let actual = null;
+    let i = 0;
+    const size = expect;
+    const r = new stream.Readable({
+      read: function () {
+	this.push(i < size ? i++ : null);
+      },
+      objectMode: true,
+    });
+    await holeWithStream(r)
+	.pipe(async i => {
+	  await timeout(Math.random() * 10);
+	  // console.log(i);
+	  return i;
+	}, {highWaterMark: 32})
+	.pipe(i => {
+	  actual = i + 1;
+	});
+    assert.deepStrictEqual(actual, expect);
+  });
+
+  it('example: Stream a list and fetch details', async function () {
     const url = 'https://jsonplaceholder.typicode.com/posts';
     let expectPostCount = -1;
     let actualPostCount = 0;
@@ -215,37 +265,6 @@ describe('Hole', function () {
 	  actualPostCount = actualPostCount + 1;
 	});
     assert.equal(actualPostCount, expectPostCount);
-  });
-
-  it('holeWithArray accepts array', async function () {
-  });
-
-  it('holeWithStream accepts readable stream', async function () {
-    const expected = 'hole';
-    let actual = '';
-    await holeWithStream(fs.createReadStream('./package.json'))
-	.pipe(split2())
-	.pipe(line => {
-	  const matched = line.match(/^ {2}"name": "(\w+?)",$/);
-	  if (matched && matched[1]) {
-	    actual = matched[1];
-	  }
-	});
-    assert.equal(actual, expected);
-  });
-
-  it('.stop() postpones streaming and .start() launches it', async function () {
-    const expected = 'yeah';
-    let actual = '';
-    const waiting = hole({value: 'yeah'})
-	.pipe((obj) => {
-	  actual = obj.value;
-	})
-	.stop();
-    await timeout(100);
-    assert.equal(actual, '');
-    await waiting.start();
-    assert.equal(actual, expected);
   });
 });
 
