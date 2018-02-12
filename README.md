@@ -42,7 +42,7 @@ async function main() {
                 title: post.title,
                 comments: comments.map(c => c.body),
             };
-        }, {highWaterMark: 4})  // You can adjust limit of simultanious running tasks,
+        }, 4)  // You can adjust limit of simultanious running tasks,
                                 // which is 16 by default
         .pipe((post) => {
           assert(typeof post.id === 'number');
@@ -92,7 +92,7 @@ holeWithStream(fs.createReadableStream('./data.csv'))
 `Gate` is a type that you can pass to `.pipe(gate)`. It can be a `function`, `async function` or native writable stream.
 
 #### `type GateOption`
-`GateOption` is a type to pass to transform stream. `highWaterMark` can be adjustable here, which is 16 by default of Node Stream.
+`GateOption` is a type to pass to transform stream. If it's number, it's used as highWaterMark, which is 16 by default of Node Stream. Otherwise it'll be passed as a Node transform option.
 
 # License
 
