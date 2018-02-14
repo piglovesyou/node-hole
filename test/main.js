@@ -180,7 +180,7 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expect);
   });
 
-  it('.piece() splits an passed array', async function () {
+  it('.split() splits an passed array', async function () {
     const expect = ['a', 'b', 'c'];
     let actual = [];
     await hole({})
@@ -189,7 +189,7 @@ describe('Hole', function () {
 	  return obj;
 	})
 	.pipe(obj => obj.items)
-	.pieces()
+	.split()
 	.pipe(item => {
 	  actual.push(item);
 	});
@@ -260,7 +260,7 @@ describe('Hole', function () {
 	  expectPostCount = posts.length;
 	  return posts;
 	})
-	.pieces()
+	.split()
 	.pipe(async function (post) {
 	  const url = `https://jsonplaceholder.typicode.com/posts/${post.id}/comments`;
 	  const comments = await fetch(url)

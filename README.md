@@ -32,7 +32,7 @@ async function main() {
                 .then(JSON.parse);
             return posts; // An array.
         })
-        .pieces()    // Split the array into pieces,
+        .split()    // Split the array into pieces,
         .pipe(async function (post) {   // ...then the next step can handle the piece one by one
             const comments = await fetch(`https://jsonplaceholder.typicode.com/posts/${post.id}/comments`)
                 .then(res => res.text())
@@ -84,7 +84,7 @@ holeWithStream(fs.createReadableStream('./data.csv'))
 
 #### `.pipe(fn: Gate, opts: GateOption): Hole`
 #### `.filter(fn: Gate, opts: GateOption): Hole`
-#### `.pieces(): Hole`
+#### `.split(): Hole`
 
 ## Data types
 
