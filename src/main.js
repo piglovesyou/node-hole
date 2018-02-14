@@ -25,7 +25,7 @@ export type Gate = ((data: any) => any)
     | stream$Writable
     | stream$Transform;
 
-export type GateInfo = [Gate, GateOption];
+export type GateInfo = [Gate, stream$writableStreamOptions];
 
 export function holeWithStream(readable: stream$Readable): Hole {
   return new Hole(readable);
