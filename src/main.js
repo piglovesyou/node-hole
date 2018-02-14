@@ -47,13 +47,15 @@ export class Hole extends LazyPromise {
   constructor(readable: stream$Readable) {
     super(_start);
     this._readable = readable;
+    // We need to make the last gate behave a writable stream. In order to do that,
+    // Hole need to store the functions until it starts and turn these to streams later.
     this._gates = [];
     this._stop = false;
 
     // Hole starts streaming soon by default
     setImmediate(() => {
       if (this._gates.length <= 0) {
-	throw new Error('Hole requires at least 1 ".pipe(fn)" call.');
+	throw new Error('Hole requires at least one ".pipe(fn)" call.');
       }
       if (this._stop === true) return;
       this.then(noop);
@@ -64,8 +66,6 @@ export class Hole extends LazyPromise {
     if (typeof opts === 'number') {
       opts = {highWaterMark: opts};
     }
-    // To be sure what's the last gate, to make it writable instead of transform,
-    // Hole just stores the functions until it starts
     this._gates = [...this._gates, [gate, opts]];
     return this;
   }
@@ -145,8 +145,8 @@ function _start(resolve: Function, reject: Function) {
       // "return undefined" means end of streaming in Node Stream, which would be
       // a pitfall for light users. Here Hole warns that case.
       if (isNullOrUndefined(resolved)) {
-	console.warn(`You returned ${String(resolved)} in the function "${fn.toString()}".
-That means "end of stream" in Node Stream. If you want to continue the stream, return something.`);
+	console.warn(`You returned "${String(resolved)}" in the function "${fn.toString()}".
+Passing "${String(resolved)}" means "end of stream" in Node Stream. If you want to continue the stream, return something.`);
       }
       callback(null, resolved);
     });

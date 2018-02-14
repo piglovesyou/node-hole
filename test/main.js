@@ -180,7 +180,7 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expect);
   });
 
-  it('.split() splits an passed array', async function () {
+  it('.pieces() splits an passed array', async function () {
     const expect = ['a', 'b', 'c'];
     let actual = [];
     await hole({})
