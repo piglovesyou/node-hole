@@ -1,5 +1,7 @@
 # Hole [![Build Status](https://travis-ci.org/piglovesyou/node-hole.svg?branch=master)](https://travis-ci.org/piglovesyou/node-hole)
-Async friendly, stream-based task consuming utility in Node.js
+Async friendly, stream-based task consuming utility in Node.js.
+
+It gives `.pipe(async data => {}, parallelLimit)` syntax to someone fighting against large amounts of data.
 
 # Concept
 After years, it has been more important to write less-state code for me and naturally it has become more data-driven/functional style. But that style and async programming, inevitable in Node, are not always a good match: on one hand when you process too many async tasks at one time, you'd end up with `FATAL ERROR: CALL_AND_RETRY_2 Allocation failed - process out of memory` or `Error: socket hang up` message. On the other hand, it's not efficient at all when you process data one by one in sequence. Reactive Extensions might be a solution though, I didn't want to [tune timer functions](https://github.com/ReactiveX/RxJava/wiki/Backpressure#useful-operators-that-avoid-the-need-for-backpressure) for that problem; all I want is just to set **limit of buffer** and **finish a task in the best speed**. 
@@ -27,16 +29,13 @@ async function main() {
     await hole('https://jsonplaceholder.typicode.com/posts')   // `hole(object: any): Hole`
         .pipe(async function (url) {  // Async function! And it never blocks the stream,
                                       // thanks for parallel-stream module
-            const posts = await fetch(url)
-                .then(res => res.text())
-                .then(JSON.parse);
+            const posts = await fetch(url).then(res => res.json());
             return posts; // An array.
         })
         .split()    // Split the array into pieces,
         .pipe(async function (post) {   // ...then the next step can handle the piece one by one
             const comments = await fetch(`https://jsonplaceholder.typicode.com/posts/${post.id}/comments`)
-                .then(res => res.text())
-                .then(JSON.parse);
+                .then(res => res.json());
             return {
                 id: post.id,
                 title: post.title,
@@ -82,17 +81,35 @@ holeWithStream(fs.createReadableStream('./data.csv'))
 
 ## Chaining functions of `Hole`
 
-#### `.pipe(fn: Gate, opts: GateOption): Hole`
-#### `.filter(fn: Gate, opts: GateOption): Hole`
+#### `.pipe(gate: Gate, opts: GateOption): Hole`
+#### `.filter(fn: any => (boolean | Promise<boolean>), opts?: GateOption): Hole`
 #### `.split(): Hole`
 
 ## Data types
 
+Hole is typed with [Flow](https://flow.org/).
+
 #### `type Gate`
-`Gate` is a type that you can pass to `.pipe(gate)`. It can be a `function`, `async function` or native writable stream.
+`Gate` is your data processor. It can be a function, async function or native writable stream.
+
+```javascript
+type Gate = ((data: any) => (any|Promise<any>))
+    | stream$Transform
+    | stream$Writable;
+```
 
 #### `type GateOption`
-`GateOption` is a type to pass to transform stream. If it's number, it's used as highWaterMark, which is 16 by default of Node Stream. Otherwise it'll be passed as a Node transform option.
+`GateOption` is a type to pass to Node Stream as an option. If it's number, it's used as highWaterMark, which is 16 by default.
+
+```javascript
+type stream$writableStreamOptions = {
+  highWaterMark?: number,
+  decodeString?: boolean,
+  objectMode?: boolean
+};
+
+type GateOption = stream$writableStreamOptions | number;
+```
 
 # License
 
