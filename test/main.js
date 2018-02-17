@@ -12,7 +12,7 @@ describe('Hole', function () {
 
   it('hole(obj) takes object', async function () {
     const expect = {ohh: 'yeah'};
-    let actual = {};
+    let actual = null;
     await hole({})
 	.pipe(obj => {
 	  obj.ohh = 'yeah';
@@ -52,7 +52,7 @@ describe('Hole', function () {
   });
 
   it('.pipe(fn) transforms data', async function () {
-    const expected = [
+    const expect = [
       {upper: 'A'},
       {upper: 'B'},
       {upper: 'C'},
@@ -67,14 +67,14 @@ describe('Hole', function () {
 	  return letter;
 	})
 	.pipe(upper => actual.push({upper}));
-    assert.deepStrictEqual(actual, expected);
+    assert.deepStrictEqual(actual, expect);
   });
 
   it('.pipe(async fn) simaltaniously consumes multiple data', async function () {
-    const expected = 5;
+    const expect = 5;
     let actual = 0;
     setTimeout(() => {
-      assert.deepStrictEqual(actual, expected, 'It should buffer all in the middle');
+      assert.deepStrictEqual(actual, expect, 'It should buffer all in the middle');
     }, 100);
     await holeWithArray([1, 2, 3, 4, 5])
 	.pipe(async n => {
@@ -89,7 +89,7 @@ describe('Hole', function () {
   });
 
   it('.pipe(async fn) keeps order', async function () {
-    const expected = ['A', 'B', 'C', 'D', 'E'];
+    const expect = ['A', 'B', 'C', 'D', 'E'];
     const actualUnordered = [];
     const actualOrdered = [];
     await holeWithArray(['a', 'b', 'c', 'd', 'e'])
@@ -102,12 +102,12 @@ describe('Hole', function () {
 	.pipe(upper => {
 	  return actualOrdered.push(upper);
 	});
-    assert.notDeepEqual(actualUnordered, expected);
-    assert.deepStrictEqual(actualOrdered, expected);
+    assert.notDeepEqual(actualUnordered, expect);
+    assert.deepStrictEqual(actualOrdered, expect);
   });
 
   it('.pipe(transform) accepts native transform', async function () {
-    const expected = ['A', 'B', 'C', 'D', 'E'];
+    const expect = ['A', 'B', 'C', 'D', 'E'];
     const actual = [];
     const t = new stream.Transform({
       transform: function (data, enc, callback) {
@@ -120,25 +120,25 @@ describe('Hole', function () {
 	.pipe(letter => {
 	  actual.push(letter);
 	});
-    assert.deepStrictEqual(actual, expected);
+    assert.deepStrictEqual(actual, expect);
   });
 
   it('.pipe(transform) accepts third party transform', async function () {
-    const expected = '  "name": "hole",';
+    const expect = '  "name": "hole",';
     const lines = [];
     await holeWithStream(fs.createReadStream('./package.json'))
 	.pipe(split2())
 	.pipe((line) => {
 	  lines.push(line);
 	});
-    assert(lines.includes(expected));
+    assert(lines.includes(expect));
   });
 
   it('last .pipe(fn) does not store data in readable buffer even if it returns something', async function () {
-    const expected = 999;
+    const expect = 999;
     let actual = null;
     const largeArray = [
-      ...Array(expected)
+      ...Array(expect)
 	  .keys()
     ];
     await holeWithArray(largeArray)
@@ -150,7 +150,7 @@ describe('Hole', function () {
 	  actual = index + 1;
 	  return index;
 	});
-    assert.deepStrictEqual(actual, expected);
+    assert.deepStrictEqual(actual, expect);
   });
 
   it('.filter(fn) filters correctly', async function () {
@@ -197,7 +197,7 @@ describe('Hole', function () {
   });
 
   it('.stop() postpones streaming and .start() launches it', async function () {
-    const expected = 'yeah';
+    const expect = 'yeah';
     let actual = '';
     const waiting = hole({value: 'yeah'})
 	.pipe((obj) => {
@@ -207,14 +207,12 @@ describe('Hole', function () {
     await timeout(100);
     assert.equal(actual, '');
     await waiting.start();
-    assert.equal(actual, expected);
+    assert.equal(actual, expect);
   });
 
   it('consumes large number of data', async function () {
     const expect = 10 * 1000;
     let actual = null;
-    let i = 0;
-    const size = expect;
     const r = createReadable(expect);
     await holeWithStream(r)
 	.pipe(async i => {
@@ -230,8 +228,7 @@ describe('Hole', function () {
   it('.pipe() and .filter() accept eitherstream option or highWaterMark number', async function () {
     const expect = 500;
     let actual = null;
-    let i = 0;
-    const r = createReadable(1000)
+    const r = createReadable(1000);
     await holeWithStream(r)
 	.pipe(async i => {
 	  await timeout(Math.random() * 10);
@@ -241,7 +238,7 @@ describe('Hole', function () {
 	  await timeout(Math.random() * 10);
 	  return 500 <= i;
 	}, 32)
-	.pipe(async i => {
+	.pipe(async () => {
 	  actual = actual + 1;
 	});
     assert.deepStrictEqual(actual, expect);
@@ -255,8 +252,7 @@ describe('Hole', function () {
     await hole({url})
 	.pipe(async function ({url}) {
 	  const posts = await fetch(url)
-	      .then(res => res.text())
-	      .then(JSON.parse);
+	      .then(res => res.json());
 	  expectPostCount = posts.length;
 	  return posts;
 	})
@@ -264,8 +260,7 @@ describe('Hole', function () {
 	.pipe(async function (post) {
 	  const url = `https://jsonplaceholder.typicode.com/posts/${post.id}/comments`;
 	  const comments = await fetch(url)
-	      .then(res => res.text())
-	      .then(JSON.parse);
+	      .then(res => res.json());
 	  return {
 	    id: post.id,
 	    title: post.title,
@@ -288,11 +283,10 @@ function timeout(ms) {
 
 function createReadable(size) {
   let i = 0;
-  const r = new stream.Readable({
+  return new stream.Readable({
     read: function () {
       this.push(i < size ? i++ : null);
     },
     objectMode: true,
   });
-  return r;
 }

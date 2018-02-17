@@ -73,7 +73,7 @@ export class Hole extends LazyPromise {
   split() {
     const gate = new Transform({
       objectMode: true,
-      transform: function (chunks, enc, callback) {
+      transform(chunks, enc, callback) {
 	if (!Array.isArray(chunks)) {
 	  throw new Error('.split() must receive an array from a previous function.');
 	}
