@@ -26,14 +26,14 @@ import fetch from 'node-fetch';
 main();
 
 async function main() {
-    await hole('https://jsonplaceholder.typicode.com/posts')   // `hole(object: any): Hole`
-        .pipe(async function (url) {  // Async function! And it never blocks the stream,
-                                      // thanks for parallel-stream module
+    await hole('https://jsonplaceholder.typicode.com/posts')
+        .pipe(async (url) => {      // Async function! And it only blocks a stream when
+                                    // number of parallel process reaches a high water mark.
             const posts = await fetch(url).then(res => res.json());
-            return posts; // An array.
+            return posts;           // An array.
         })
-        .split()    // Split the array into pieces,
-        .pipe(async function (post) {   // ...then the next step can handle the piece one by one
+        .split()                    // Split the array into pieces,
+        .pipe(async (post) => {     // ...then the next step can handle s piece one by one
             const comments = await fetch(`https://jsonplaceholder.typicode.com/posts/${post.id}/comments`)
                 .then(res => res.json());
             return {
@@ -41,8 +41,8 @@ async function main() {
                 title: post.title,
                 comments: comments.map(c => c.body),
             };
-        }, 4)  // You can adjust limit of simultanious running tasks,
-               // which is 16 by default
+        }, 4)                       // You can adjust limit of simultanious processing,
+                                    // which is 16 by default
         .pipe((post) => {
           assert(typeof post.id === 'number');
           assert(typeof post.title === 'string');
