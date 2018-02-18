@@ -4,7 +4,6 @@ import assert from 'assert';
 import stream from 'stream';
 import fs from 'fs';
 import hole, {holeWithArray, holeWithStream} from '../src/main';
-import fetch from 'node-fetch';
 import split2 from 'split2';
 
 describe('Hole', function () {
@@ -242,38 +241,6 @@ describe('Hole', function () {
 	  actual = actual + 1;
 	});
     assert.deepStrictEqual(actual, expect);
-  });
-
-  it('example: Stream a list and fetch details', async function () {
-    const url = 'https://jsonplaceholder.typicode.com/posts';
-    let expectPostCount = -1;
-    let actualPostCount = 0;
-
-    await hole({url})
-	.pipe(async function ({url}) {
-	  const posts = await fetch(url)
-	      .then(res => res.json());
-	  expectPostCount = posts.length;
-	  return posts;
-	})
-	.split()
-	.pipe(async function (post) {
-	  const url = `https://jsonplaceholder.typicode.com/posts/${post.id}/comments`;
-	  const comments = await fetch(url)
-	      .then(res => res.json());
-	  return {
-	    id: post.id,
-	    title: post.title,
-	    comments: comments.map(c => c.body),
-	  };
-	})
-	.pipe((out) => {
-	  assert(typeof out.id === 'number');
-	  assert(typeof out.title === 'string');
-	  assert(Array.isArray(out.comments));
-	  actualPostCount = actualPostCount + 1;
-	});
-    assert.equal(actualPostCount, expectPostCount);
   });
 });
 
