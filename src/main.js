@@ -19,11 +19,9 @@ type stream$writableStreamOptions = {
 
 export type GateOption = stream$writableStreamOptions | number;
 
-export type Gate = ((data: any) => any)
-    | ((data: any) => Promise<any>)
-    | stream$Readable
-    | stream$Writable
-    | stream$Transform;
+export type Gate = ((data: any) => (any|Promise<any>))
+    | stream$Transform
+    | stream$Writable;
 
 export type GateInfo = [Gate, stream$writableStreamOptions];
 
@@ -91,7 +89,7 @@ export class Hole extends LazyPromise {
     return this;
   }
 
-  filter(fn: Gate, opts?: GateOption = {}): Hole {
+  filter(fn: any => (boolean | Promise<boolean>), opts?: GateOption = {}): Hole {
     if (typeof fn !== 'function') {
       throw new Error('.filter() only accepts function');
     }
