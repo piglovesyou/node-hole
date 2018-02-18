@@ -7,7 +7,7 @@ import {Transform, Writable} from 'stream';
 import LazyPromise from 'lazy-promise';
 import HoleTransform from './transform';
 
-export type Processor = ((data: any) => (any | Promise<any>))
+export type Processor<T, U> = ((data: T) => (U | Promise<U>))
     | stream$Transform
     | stream$Writable;
 
@@ -30,7 +30,7 @@ export default function hole(obj: any): Hole {
   return fromArray([obj]);
 }
 
-export class Hole extends LazyPromise {
+export class Hole<T> extends LazyPromise {
   _readable: stream$Readable;
   _procInfoArray: Array<ProcessorInfo>;
 
@@ -40,11 +40,11 @@ export class Hole extends LazyPromise {
     this._procInfoArray = [];
   }
 
-  pipe(p: Processor, opts?: ProcessorOption | number): Hole {
+  pipe<U>(p: Processor<T, U>, opts?: ProcessorOption | number): Hole<U> {
     const options = typeof opts === 'number' ? {maxParallel: opts}
         : opts || {};
     this._procInfoArray = [...this._procInfoArray, [p, options]];
-    return this;
+    return ((this: any): Hole<U>);
   }
 
   split() {
@@ -138,4 +138,3 @@ function start(resolve: Function, reject: Function) {
     return new HoleTransform(fn, opts);
   }
 }
-
