@@ -19,7 +19,7 @@ type stream$writableStreamOptions = {
 
 export type GateOption = stream$writableStreamOptions | number;
 
-export type Gate = ((data: any) => (any|Promise<any>))
+export type Gate = ((data: any) => (any | Promise<any>))
     | stream$Transform
     | stream$Writable;
 
@@ -40,7 +40,6 @@ export default function hole(obj: any): Hole {
 export class Hole extends LazyPromise {
   _readable: stream$Readable;
   _gates: Array<GateInfo>;
-  _stop: boolean;
 
   constructor(readable: stream$Readable) {
     super(_start);
@@ -48,16 +47,6 @@ export class Hole extends LazyPromise {
     // We need to make the last gate behave a writable stream. In order to do that,
     // Hole need to store the functions until it starts and turn these to streams later.
     this._gates = [];
-    this._stop = false;
-
-    // Hole starts streaming soon by default
-    setImmediate(() => {
-      if (this._gates.length <= 0) {
-	throw new Error('Hole requires at least one ".pipe(fn)" call.');
-      }
-      if (this._stop === true) return;
-      this.then(noop);
-    });
   }
 
   pipe(gate: Gate, opts: GateOption = {}): Hole {
@@ -109,18 +98,12 @@ export class Hole extends LazyPromise {
 
   // TODO: want something like
   // hole().collect(3).pipe(([v1, v2, v3] => {...})
-  stop(): Hole {
-    this._stop = true;
-    return this;
-  }
-
-  start(): Hole {
-    this.then(noop);
-    return this;
-  }
 }
 
 function _start(resolve: Function, reject: Function) {
+  if (this._gates.length <= 0) {
+    throw new Error('Hole requires at least one ".pipe(fn)" call.');
+  }
   const streams = [
     this._readable,
     ...(this._gates.map((gate, i, gates) => toStream(gate, i === gates.length - 1))),
@@ -166,8 +149,6 @@ function createTransform(opts: stream$writableStreamOptions, fn, finalize: (pass
     finalize(obj, rv, callback);
   });
 }
-
-function noop() {}
 
 function isNullOrUndefined(obj) {
   return obj == null;

@@ -195,17 +195,16 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expect);
   });
 
-  it('.stop() postpones streaming and .start() launches it', async function () {
+  it('postpones streaming until .then() is called', async function () {
     const expect = 'yeah';
     let actual = '';
-    const waiting = hole({value: 'yeah'})
+    const postponed = hole({value: 'yeah'})
 	.pipe((obj) => {
 	  actual = obj.value;
-	})
-	.stop();
+	});
     await timeout(100);
     assert.equal(actual, '');
-    await waiting.start();
+    await postponed;
     assert.equal(actual, expect);
   });
 
