@@ -1,6 +1,5 @@
 // @flow
 
-import isPromise from 'is-promise';
 import pump from 'pump';
 import streamify from 'stream-array';
 import isStream from 'is-stream';
@@ -138,15 +137,10 @@ function createTransform(opts: stream$writableStreamOptions, fn, finalize: (pass
   return parallelTransform(opts.highWaterMark || defaultWritableHighWaterMark, opts, function (obj, callback) {
     if (typeof fn !== 'function') throw new Error('cant be reached');
     const rv = fn.call(this, obj);
-
-    if (isPromise(rv)) {
-      if (typeof rv.then !== 'function') throw new Error('cant be reached');
-      rv.then(resolved => {
-	finalize(obj, resolved, callback);
-      });
-      return;
-    }
-    finalize(obj, rv, callback);
+    Promise.resolve(rv)
+	.then(rv => {
+	  finalize(obj, rv, callback);
+	});
   });
 }
 

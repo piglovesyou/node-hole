@@ -27,7 +27,6 @@
   "repository": "git@github.com:piglovesyou/node-hole.git",
   "license": "MIT",
   "dependencies": {
-    "is-promise": "^2.1.0",
     "is-stream": "^1.1.0",
     "lazy-promise": "^4.0.0",
     "parallel-transform": "github:piglovesyou/parallel-transform",
