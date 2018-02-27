@@ -77,24 +77,6 @@ export class Hole extends LazyPromise {
     return this;
   }
 
-  filter(fn: any => (boolean | Promise<boolean>), opts?: GateOption = {}): Hole {
-    if (typeof fn !== 'function') {
-      throw new Error('.filter() only accepts function');
-    }
-    if (typeof opts === 'number') {
-      opts = {highWaterMark: opts};
-    }
-    const t = createTransform(opts, fn, (passed, resolved, callback) => {
-      if (Boolean(resolved)) {
-	callback(null, passed);
-	return;
-      }
-      callback();
-    });
-    this._gates = [...this._gates, [t, {}]];
-    return this;
-  }
-
   // TODO: want something like
   // hole().collect(3).pipe(([v1, v2, v3] => {...})
 }
@@ -116,19 +98,13 @@ function _start(resolve: Function, reject: Function) {
   function toStream([fn, opts], isLast) {
     if (isStream(fn)) return fn;
 
-    return createTransform(opts, fn, (passed, resolved, callback) => {
+    return createTransform(opts, fn, (passed, rv, callback) => {
       // Last transform should behave writable stream so that it's never stuck
       if (isLast) {
 	callback();
 	return;
       }
-      // "return undefined" means end of streaming in Node Stream, which would be
-      // a pitfall for light users. Here Hole warns that case.
-      if (isNullOrUndefined(resolved)) {
-	console.warn(`You returned "${String(resolved)}" in the function "${fn.toString()}".
-Passing "${String(resolved)}" means "end of stream" in Node Stream. If you want to continue the stream, return something.`);
-      }
-      callback(null, resolved);
+      callback(null, rv);
     });
   }
 }
@@ -142,10 +118,6 @@ function createTransform(opts: stream$writableStreamOptions, fn, finalize: (pass
 	  finalize(obj, rv, callback);
 	});
   });
-}
-
-function isNullOrUndefined(obj) {
-  return obj == null;
 }
 
 function getDefaultWritableHighWaterMark() {

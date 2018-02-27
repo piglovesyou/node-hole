@@ -134,13 +134,13 @@ describe('Hole', function () {
     const actual = [];
     await holeWithArray([1, 2, 3, 4, 5, 6, 7, 8])
 	.pipe(function (n) {
-	  if (n >= 4) {
+	  if (4 <= n) {
 	    return n;
 	  }
 	  return null;
 	})
 	.pipe(async function (n) {
-	  if (6 <= n) {
+	  if (n <= 6) {
 	    return n;
 	  }
 	  return undefined;
@@ -219,6 +219,10 @@ describe('Hole', function () {
     await holeWithStream(r)
 	.pipe(async i => {
 	  await timeout(Math.random() * 10);
+	  return i;
+	}, 32)
+	.pipe(i => {
+	  if (i < 500) return;
 	  return i;
 	}, 32)
 	.pipe(async () => {
