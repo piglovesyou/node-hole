@@ -82,8 +82,10 @@ holeWithStream(fs.createReadableStream('./data.csv'))
 ## Chaining functions of `Hole`
 
 #### `.pipe(gate: Gate, opts: GateOption): Hole`
-#### `.filter(fn: any => (boolean | Promise<boolean>), opts?: GateOption): Hole`
+An argument function / transform transforms each data of stream. If it returns `null` or `undefined`, it **filters out data** and does not pass it to the next process.
+
 #### `.split(): Hole`
+It splits an array the previous process returns into pieces the next process can handle one by one.
 
 ## Data types
 
