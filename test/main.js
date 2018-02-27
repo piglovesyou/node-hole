@@ -168,33 +168,6 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expect);
   });
 
-  it('.filter(fn) filters correctly', async function () {
-    const expect = [5, 6, 7, 8, 9];
-    const actual = [];
-    await holeWithArray([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-	.filter(n => {
-	  return 5 <= n;
-	})
-	.pipe(n => {
-	  actual.push(n);
-	});
-    assert.deepStrictEqual(actual, expect);
-  });
-
-  it('.filter(async fn) keeps order', async function () {
-    const expect = [5, 6, 7, 8, 9];
-    const actual = [];
-    await holeWithArray([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
-	.filter(async n => {
-	  await timeout(Math.random() * 200);
-	  return 5 <= n;
-	})
-	.pipe(n => {
-	  actual.push(n);
-	});
-    assert.deepStrictEqual(actual, expect);
-  });
-
   it('.pieces() splits an passed array', async function () {
     const expect = ['a', 'b', 'c'];
     let actual = [];
@@ -239,7 +212,7 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expect);
   });
 
-  it('.pipe() and .filter() accept eitherstream option or highWaterMark number', async function () {
+  it('.pipe() accepts either stream option or highWaterMark number', async function () {
     const expect = 500;
     let actual = null;
     const r = createReadable(1000);
@@ -247,10 +220,6 @@ describe('Hole', function () {
 	.pipe(async i => {
 	  await timeout(Math.random() * 10);
 	  return i;
-	}, 32)
-	.filter(async i => {
-	  await timeout(Math.random() * 10);
-	  return 500 <= i;
 	}, 32)
 	.pipe(async () => {
 	  actual = actual + 1;
