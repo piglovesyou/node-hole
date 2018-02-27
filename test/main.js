@@ -129,6 +129,26 @@ describe('Hole', function () {
     assert(lines.includes(expect));
   });
 
+  it('.pipe(fn) filters out values by returning null or undefined', async function () {
+    const expect = [4, 5, 6];
+    const actual = [];
+    await holeWithArray([1, 2, 3, 4, 5, 6, 7, 8])
+	.pipe(function (n) {
+	  if (n >= 4) {
+	    return n;
+	  }
+	  return null;
+	})
+	.pipe(async function (n) {
+	  if (6 <= n) {
+	    return n;
+	  }
+	  return undefined;
+	})
+	.pipe(n => actual.push(n));
+    assert.deepStrictEqual(actual, expect);
+  });
+
   it('last .pipe(fn) does not store data in readable buffer even if it returns something', async function () {
     const expect = 999;
     let actual = null;
