@@ -61,10 +61,6 @@ describe('Hole', function () {
     const actual = [];
     await holeWithArray(['a', 'b', 'c', 'd', 'e'])
 	.pipe(letter => letter.toUpperCase())
-	.pipe(async (letter) => {
-	  await timeout(Math.random() * 100);
-	  return letter;
-	})
 	.pipe(upper => actual.push({upper}));
     assert.deepStrictEqual(actual, expect);
   });
