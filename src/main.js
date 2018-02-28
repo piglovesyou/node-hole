@@ -118,26 +118,20 @@ function _start(resolve: Function, reject: Function) {
   function toStream([fn, opts], isLast) {
     if (isStream(fn)) return fn;
 
-    return createTransform(opts, fn, (passed, rv, callback) => {
-      // Last transform should behave writable stream so that it's never stuck
-      if (isLast) {
-        callback();
-        return;
-      }
-      callback(null, rv);
+    return parallelTransform(opts.highWaterMark || defaultWritableHighWaterMark, opts, function (obj, callback) {
+      if (typeof fn !== 'function') throw new Error('cant be reached');
+      const rv = fn.call(this, obj);
+      Promise.resolve(rv)
+          .then(rv => {
+            // Last transform should behave writable stream so that it's never stuck
+            if (isLast) {
+              callback();
+              return;
+            }
+            callback(null, rv);
+          });
     });
   }
-}
-
-function createTransform(opts: stream$writableStreamOptions, fn, finalize: (passed: any, resolved: any, callback: Function) => void): stream$Transform {
-  return parallelTransform(opts.highWaterMark || defaultWritableHighWaterMark, opts, function (obj, callback) {
-    if (typeof fn !== 'function') throw new Error('cant be reached');
-    const rv = fn.call(this, obj);
-    Promise.resolve(rv)
-        .then(rv => {
-          finalize(obj, rv, callback);
-        });
-  });
 }
 
 function getDefaultWritableHighWaterMark() {
