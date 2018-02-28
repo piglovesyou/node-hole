@@ -13,13 +13,13 @@ describe('Hole', function () {
     const expect = {ohh: 'yeah'};
     let actual = null;
     await hole({})
-	.pipe(obj => {
-	  obj.ohh = 'yeah';
-	  return obj;
-	})
-	.pipe(obj => {
-	  actual = obj;
-	});
+        .pipe(obj => {
+          obj.ohh = 'yeah';
+          return obj;
+        })
+        .pipe(obj => {
+          actual = obj;
+        });
     assert.deepStrictEqual(actual, expect);
   });
 
@@ -27,9 +27,9 @@ describe('Hole', function () {
     const expect = ['a', 'b', 'c'];
     const actual = [];
     await holeWithArray(['a', 'b', 'c'])
-	.pipe(letter => {
-	  actual.push(letter);
-	});
+        .pipe(letter => {
+          actual.push(letter);
+        });
     assert.deepStrictEqual(actual, expect);
   });
 
@@ -39,14 +39,14 @@ describe('Hole', function () {
     let i = 0;
     await holeWithStream(new stream.Readable({
       read() {
-	this.push(i < 5 ? i : null);
-	i++;
+        this.push(i < 5 ? i : null);
+        i++;
       },
       objectMode: true,
     }))
-	.pipe((i) => {
-	  actual.push(i);
-	});
+        .pipe((i) => {
+          actual.push(i);
+        });
     assert.deepStrictEqual(actual, expect);
   });
 
@@ -60,8 +60,8 @@ describe('Hole', function () {
     ];
     const actual = [];
     await holeWithArray(['a', 'b', 'c', 'd', 'e'])
-	.pipe(letter => letter.toUpperCase())
-	.pipe(upper => actual.push({upper}));
+        .pipe(letter => letter.toUpperCase())
+        .pipe(upper => actual.push({upper}));
     assert.deepStrictEqual(actual, expect);
   });
 
@@ -72,14 +72,14 @@ describe('Hole', function () {
       assert.deepStrictEqual(actual, expect, 'It should buffer all in the middle');
     }, 100);
     await holeWithArray([1, 2, 3, 4, 5])
-	.pipe(async n => {
-	  actual++;
-	  await timeout(300);
-	  return n;
-	})
-	.pipe(() => {
-	  actual--;
-	});
+        .pipe(async n => {
+          actual++;
+          await timeout(300);
+          return n;
+        })
+        .pipe(() => {
+          actual--;
+        });
     assert.deepStrictEqual(actual, 0, 'It should be decremented all afterward');
   });
 
@@ -88,15 +88,15 @@ describe('Hole', function () {
     const actualUnordered = [];
     const actualOrdered = [];
     await holeWithArray(['a', 'b', 'c', 'd', 'e'])
-	.pipe(letter => letter.toUpperCase())
-	.pipe(async (letter) => {
-	  await timeout(Math.random() * 100);
-	  actualUnordered.push(letter);
-	  return letter;
-	})
-	.pipe(upper => {
-	  return actualOrdered.push(upper);
-	});
+        .pipe(letter => letter.toUpperCase())
+        .pipe(async (letter) => {
+          await timeout(Math.random() * 100);
+          actualUnordered.push(letter);
+          return letter;
+        })
+        .pipe(upper => {
+          return actualOrdered.push(upper);
+        });
     assert.notDeepEqual(actualUnordered, expect);
     assert.deepStrictEqual(actualOrdered, expect);
   });
@@ -106,15 +106,15 @@ describe('Hole', function () {
     const actual = [];
     const t = new stream.Transform({
       transform: function (data, enc, callback) {
-	callback(null, data.toUpperCase());
+        callback(null, data.toUpperCase());
       },
       objectMode: true,
     });
     await holeWithArray(['a', 'b', 'c', 'd', 'e'])
-	.pipe(t)
-	.pipe(letter => {
-	  actual.push(letter);
-	});
+        .pipe(t)
+        .pipe(letter => {
+          actual.push(letter);
+        });
     assert.deepStrictEqual(actual, expect);
   });
 
@@ -122,10 +122,10 @@ describe('Hole', function () {
     const expect = '  "name": "hole",';
     const lines = [];
     await holeWithStream(fs.createReadStream('./package.json'))
-	.pipe(split2())
-	.pipe((line) => {
-	  lines.push(line);
-	});
+        .pipe(split2())
+        .pipe((line) => {
+          lines.push(line);
+        });
     assert(lines.includes(expect));
   });
 
@@ -133,19 +133,19 @@ describe('Hole', function () {
     const expect = [4, 5, 6];
     const actual = [];
     await holeWithArray([1, 2, 3, 4, 5, 6, 7, 8])
-	.pipe(function (n) {
-	  if (4 <= n) {
-	    return n;
-	  }
-	  return null;
-	})
-	.pipe(async function (n) {
-	  if (n <= 6) {
-	    return n;
-	  }
-	  return undefined;
-	})
-	.pipe(n => actual.push(n));
+        .pipe(function (n) {
+          if (4 <= n) {
+            return n;
+          }
+          return null;
+        })
+        .pipe(async function (n) {
+          if (n <= 6) {
+            return n;
+          }
+          return undefined;
+        })
+        .pipe(n => actual.push(n));
     assert.deepStrictEqual(actual, expect);
   });
 
@@ -154,17 +154,17 @@ describe('Hole', function () {
     let actual = null;
     const largeArray = [
       ...Array(expect)
-	  .keys()
+          .keys()
     ];
     await holeWithArray(largeArray)
-	.pipe(index => {
-	  return index;
-	})
-	.pipe(index => {
-	  // If the last transfrom stores the "index" in the readable buffer, it's stuck in the middle.
-	  actual = index + 1;
-	  return index;
-	});
+        .pipe(index => {
+          return index;
+        })
+        .pipe(index => {
+          // If the last transfrom stores the "index" in the readable buffer, it's stuck in the middle.
+          actual = index + 1;
+          return index;
+        });
     assert.deepStrictEqual(actual, expect);
   });
 
@@ -172,15 +172,15 @@ describe('Hole', function () {
     const expect = ['a', 'b', 'c'];
     let actual = [];
     await hole({})
-	.pipe(async obj => {
-	  obj.items = ['a', 'b', 'c'];
-	  return obj;
-	})
-	.pipe(obj => obj.items)
-	.split()
-	.pipe(item => {
-	  actual.push(item);
-	});
+        .pipe(async obj => {
+          obj.items = ['a', 'b', 'c'];
+          return obj;
+        })
+        .pipe(obj => obj.items)
+        .split()
+        .pipe(item => {
+          actual.push(item);
+        });
     assert.deepStrictEqual(actual, expect);
   });
 
@@ -188,9 +188,9 @@ describe('Hole', function () {
     const expect = 'yeah';
     let actual = '';
     const postponed = hole({value: 'yeah'})
-	.pipe((obj) => {
-	  actual = obj.value;
-	});
+        .pipe((obj) => {
+          actual = obj.value;
+        });
     await timeout(100);
     assert.equal(actual, '');
     await postponed;
@@ -202,13 +202,13 @@ describe('Hole', function () {
     let actual = null;
     const r = createReadable(expect);
     await holeWithStream(r)
-	.pipe(async i => {
-	  await timeout(Math.random() * 10);
-	  return i;
-	}, {highWaterMark: 32})
-	.pipe(i => {
-	  actual = i + 1;
-	});
+        .pipe(async i => {
+          await timeout(Math.random() * 10);
+          return i;
+        }, {highWaterMark: 32})
+        .pipe(i => {
+          actual = i + 1;
+        });
     assert.deepStrictEqual(actual, expect);
   });
 
@@ -217,17 +217,17 @@ describe('Hole', function () {
     let actual = null;
     const r = createReadable(1000);
     await holeWithStream(r)
-	.pipe(async i => {
-	  await timeout(Math.random() * 10);
-	  return i;
-	}, 32)
-	.pipe(i => {
-	  if (i < 500) return;
-	  return i;
-	}, 32)
-	.pipe(async () => {
-	  actual = actual + 1;
-	});
+        .pipe(async i => {
+          await timeout(Math.random() * 10);
+          return i;
+        }, 32)
+        .pipe(i => {
+          if (i < 500) return;
+          return i;
+        }, 32)
+        .pipe(async () => {
+          actual = actual + 1;
+        });
     assert.deepStrictEqual(actual, expect);
   });
 
@@ -243,16 +243,16 @@ describe('Hole', function () {
     const actual1 = [];
     const actual2 = [];
     await holeWithStream(createReadable(23))
-	.pipe(n => n * 10)
-	.lineup(5)
-	.pipe(packed => {
-	  actual1.push(packed);
-	  return packed;
-	})
-	.pipe(packed => packed[0])
-	.lineup(3)
-	.pipe(packed => packed[packed.length - 1])
-	.pipe(packed => actual2.push(packed));
+        .pipe(n => n * 10)
+        .lineup(5)
+        .pipe(packed => {
+          actual1.push(packed);
+          return packed;
+        })
+        .pipe(packed => packed[0])
+        .lineup(3)
+        .pipe(packed => packed[packed.length - 1])
+        .pipe(packed => actual2.push(packed));
     assert.deepStrictEqual(actual1, expect1);
     assert.deepStrictEqual(actual2, expect2);
   });
