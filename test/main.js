@@ -230,6 +230,23 @@ describe('Hole', function () {
 	});
     assert.deepStrictEqual(actual, expect);
   });
+
+  it.only('.pack(n) buffers multiple data and let the next process handle it as an array', async function () {
+    const expect = [
+      [0, 10, 20, 30, 40],
+      [50, 60, 70, 80, 90],
+      [100, 110, 120, 130, 140],
+      [150, 160, 170, 180, 190],
+      [200, 210, 220, 230, 240],
+      [250, 260, 270, 280],
+    ];
+    const actual = [];
+    await holeWithStream(createReadable(29))
+	.pipe(n => n * 10)
+	.pack(5)
+	.pipe(packed => actual.push(packed));
+    assert.deepStrictEqual(actual, expect);
+  });
 });
 
 function timeout(ms) {
