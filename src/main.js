@@ -60,17 +60,17 @@ export class Hole extends LazyPromise {
     const gate = new Transform({
       objectMode: true,
       transform(chunks, enc, callback) {
-	if (!Array.isArray(chunks)) {
-	  throw new Error('.split() must receive an array from a previous function.');
-	}
-	push.call(this, chunks, 0);
-	callback();
+        if (!Array.isArray(chunks)) {
+          throw new Error('.split() must receive an array from a previous function.');
+        }
+        push.call(this, chunks, 0);
+        callback();
 
-	function push(chunks, curr) {
-	  if (!chunks[curr]) return;
-	  this.push(chunks[curr]);
-	  push.call(this, chunks, curr + 1);
-	}
+        function push(chunks, curr) {
+          if (!chunks[curr]) return;
+          this.push(chunks[curr]);
+          push.call(this, chunks, curr + 1);
+        }
       }
     });
     this._gates = [...this._gates, [gate, {}]];
@@ -81,17 +81,17 @@ export class Hole extends LazyPromise {
     let buffered = [];
     const gate = new Transform({
       transform(chunk, enc, callback) {
-	buffered = [...buffered, chunk];
-	if (buffered.length >= size) {
-	  this.push(buffered);
-	  buffered = [];
-	}
-	callback();
+        buffered = [...buffered, chunk];
+        if (buffered.length >= size) {
+          this.push(buffered);
+          buffered = [];
+        }
+        callback();
       },
       flush(callback) {
         if (buffered.length > 0) {
           this.push(buffered);
-	}
+        }
         callback();
       },
       objectMode: true,
@@ -121,8 +121,8 @@ function _start(resolve: Function, reject: Function) {
     return createTransform(opts, fn, (passed, rv, callback) => {
       // Last transform should behave writable stream so that it's never stuck
       if (isLast) {
-	callback();
-	return;
+        callback();
+        return;
       }
       callback(null, rv);
     });
@@ -134,9 +134,9 @@ function createTransform(opts: stream$writableStreamOptions, fn, finalize: (pass
     if (typeof fn !== 'function') throw new Error('cant be reached');
     const rv = fn.call(this, obj);
     Promise.resolve(rv)
-	.then(rv => {
-	  finalize(obj, rv, callback);
-	});
+        .then(rv => {
+          finalize(obj, rv, callback);
+        });
   });
 }
 
