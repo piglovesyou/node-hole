@@ -204,11 +204,8 @@ describe('Hole', function () {
     await holeWithStream(r)
         .pipe(async i => {
           await timeout(Math.random() * 10);
-          return i;
-        }, {highWaterMark: 32})
-        .pipe(i => {
           actual = i + 1;
-        });
+        }, {highWaterMark: 32});
     assert.deepStrictEqual(actual, expect);
   });
 
