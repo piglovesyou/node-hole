@@ -231,21 +231,30 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expect);
   });
 
-  it.only('.pack(n) buffers multiple data and let the next process handle it as an array', async function () {
-    const expect = [
+  it('.lineup(n) buffers multiple data and let the next process handle it as an array', async function () {
+    const expect1 = [
       [0, 10, 20, 30, 40],
       [50, 60, 70, 80, 90],
       [100, 110, 120, 130, 140],
       [150, 160, 170, 180, 190],
-      [200, 210, 220, 230, 240],
-      [250, 260, 270, 280],
+      [200, 210, 220],
     ];
-    const actual = [];
-    await holeWithStream(createReadable(29))
+    const expect2 = [100, 200];
+    const actual1 = [];
+    const actual2 = [];
+    await holeWithStream(createReadable(23))
 	.pipe(n => n * 10)
-	.pack(5)
-	.pipe(packed => actual.push(packed));
-    assert.deepStrictEqual(actual, expect);
+	.lineup(5)
+	.pipe(packed => {
+	  actual1.push(packed);
+	  return packed;
+	})
+	.pipe(packed => packed[0])
+	.lineup(3)
+	.pipe(packed => packed[packed.length - 1])
+	.pipe(packed => actual2.push(packed));
+    assert.deepStrictEqual(actual1, expect1);
+    assert.deepStrictEqual(actual2, expect2);
   });
 });
 

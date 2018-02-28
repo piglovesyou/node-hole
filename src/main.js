@@ -77,8 +77,28 @@ export class Hole extends LazyPromise {
     return this;
   }
 
-  // TODO: want something like
-  // hole().collect(3).pipe(([v1, v2, v3] => {...})
+  lineup(size: number) {
+    let buffered = [];
+    const gate = new Transform({
+      transform(chunk, enc, callback) {
+	buffered = [...buffered, chunk];
+	if (buffered.length >= size) {
+	  this.push(buffered);
+	  buffered = [];
+	}
+	callback();
+      },
+      flush(callback) {
+        if (buffered.length > 0) {
+          this.push(buffered);
+	}
+        callback();
+      },
+      objectMode: true,
+    });
+    this._gates = [...this._gates, [gate, {}]];
+    return this;
+  }
 }
 
 function _start(resolve: Function, reject: Function) {

@@ -87,6 +87,9 @@ An argument function / transform transforms each data of stream. If it returns `
 #### `.split(): Hole`
 It splits an array the previous process returns into pieces the next process can handle one by one.
 
+#### `.lineup(size: number): Hole`
+It buffers data and passes an array of number of the `size` to the next process.
+
 ## Data types
 
 Hole is typed with [Flow](https://flow.org/).
