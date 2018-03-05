@@ -30,7 +30,7 @@
   "dependencies": {
     "is-stream": "^1.1.0",
     "lazy-promise": "^4.0.0",
-    "parallel-transform": "github:piglovesyou/parallel-transform",
+    "parallel-transform-stream": "^1.0.1",
     "pump": "^3.0.0",
     "stream-array": "^1.1.2"
   },
