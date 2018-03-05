@@ -3,11 +3,9 @@
 import pump from 'pump';
 import streamify from 'stream-array';
 import isStream from 'is-stream';
-import parallelTransform from 'parallel-transform';
 import {Transform, Writable} from 'stream';
 import LazyPromise from 'lazy-promise';
-
-const defaultWritableHighWaterMark = getDefaultWritableHighWaterMark();
+import HoleTransform from './hole-transform';
 
 // From https://github.com/facebook/flow/blob/v0.64.0/lib/node.js#L1436
 type stream$writableStreamOptions = {
@@ -105,40 +103,30 @@ function _start(resolve: Function, reject: Function) {
   if (this._gates.length <= 0) {
     throw new Error('Hole requires at least one ".pipe(fn)" call.');
   }
+  const transforms = this._gates.map(toStream); // (gate, i, gates) => toStream(gate, i === gates.length - 1));
+  const voidWriter = new Writable({objectMode: true, write(data, enc, callback) { callback() }});
+
   const streams = [
     this._readable,
-    ...(this._gates.map((gate, i, gates) => toStream(gate, i === gates.length - 1))),
-    (error) => {
-      if (error) reject(error); else resolve();
-    }
+    ...transforms,
+    voidWriter
   ];
 
-  pump.apply(null, streams);
+  pump.apply(null, [
+    ...streams,
+    (error) => {
+      if (error) {
+        reject(error);
+      } else {
+        resolve();
+      }
+    }
+  ]);
 
-  function toStream([fn, opts], isLast) {
+  function toStream([fn, opts]) {
     if (isStream(fn)) return fn;
 
-    return parallelTransform(opts.highWaterMark || defaultWritableHighWaterMark, opts, function (obj, callback) {
-      if (typeof fn !== 'function') throw new Error('cant be reached');
-      const rv = fn.call(this, obj);
-      Promise.resolve(rv)
-          .then(rv => {
-            // Last transform should behave writable stream so that it's never stuck
-            if (isLast) {
-              callback();
-              return;
-            }
-            callback(null, rv);
-          });
-    });
+    return new HoleTransform(fn, opts);
   }
 }
 
-function getDefaultWritableHighWaterMark() {
-  const w = new Writable({objectMode: true});
-  // Node v9.4.0 or higher only returns number 16
-  const rv = w.writableHighWaterMark || 16;
-  // $FlowFixMe https://github.com/facebook/flow/pull/5763
-  w.destroy();
-  return rv;
-}
