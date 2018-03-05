@@ -199,13 +199,13 @@ describe('Hole', function () {
 
   it('consumes large number of data', async function () {
     const expect = 10 * 1000;
-    let actual = null;
+    let actual = 0;
     const r = createReadable(expect);
     await holeWithStream(r)
         .pipe(async i => {
           await timeout(Math.random() * 10);
-          actual = i + 1;
-        }, {highWaterMark: 32});
+          actual++;
+        }, 32);
     assert.deepStrictEqual(actual, expect);
   });
 
