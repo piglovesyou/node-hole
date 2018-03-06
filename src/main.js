@@ -68,7 +68,7 @@ export class Hole extends LazyPromise {
     return this;
   }
 
-  lineup(size: number) {
+  concat(size: number) {
     let buffered = [];
     const p = new Transform({
       transform(chunk, enc, callback) {

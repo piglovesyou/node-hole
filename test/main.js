@@ -202,14 +202,14 @@ describe('Hole', function () {
     let actual = 0;
     const r = createReadable(expect);
     await holeWithStream(r)
-        .pipe(async i => {
+        .pipe(async () => {
           await timeout(Math.random() * 10);
           actual++;
         }, 32);
     assert.deepStrictEqual(actual, expect);
   });
 
-  it('.pipe() accepts either stream option or highWaterMark number', async function () {
+  it('.pipe() accepts either stream option or maxParallel number', async function () {
     const expect = 500;
     let actual = null;
     const r = createReadable(1000);
@@ -228,7 +228,7 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expect);
   });
 
-  it('.lineup(n) buffers multiple data and let the next process handle it as an array', async function () {
+  it('.concat(size) buffers multiple data and let the next process handle it as an array', async function () {
     const expect1 = [
       [0, 10, 20, 30, 40],
       [50, 60, 70, 80, 90],
@@ -241,13 +241,13 @@ describe('Hole', function () {
     const actual2 = [];
     await holeWithStream(createReadable(23))
         .pipe(n => n * 10)
-        .lineup(5)
+        .concat(5)
         .pipe(packed => {
           actual1.push(packed);
           return packed;
         })
         .pipe(packed => packed[0])
-        .lineup(3)
+        .concat(3)
         .pipe(packed => packed[packed.length - 1])
         .pipe(packed => actual2.push(packed));
     assert.deepStrictEqual(actual1, expect1);
