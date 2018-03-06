@@ -81,40 +81,26 @@ holeWithStream(fs.createReadableStream('./data.csv'))
 
 ## Chaining functions of `Hole`
 
-#### `.pipe(gate: Gate, opts: GateOption): Hole`
-An argument function / transform transforms each data of stream. If it returns `null` or `undefined`, it **filters out data** and does not pass it to the next process.
+#### `.pipe(processor, opts)`
+Typed as:
+```javascript
+.pipe(
+    processor: ((data: any) => (any | Promise<any>))
+        | stream$Transform
+        | stream$Writable,
+    opts: {
+      maxParallel?: number,
+      highWaterMark?: number,
+    }
+): Hole
+```
+An argument function / transform transforms each data of stream. If it returns `null` or `undefined` it **filters out the data** so the next processor doesn't receive it.
 
 #### `.split(): Hole`
 It splits an array the previous process returns into pieces the next process can handle one by one.
 
 #### `.lineup(size: number): Hole`
 It buffers data and passes an array of number of the `size` to the next process.
-
-## Data types
-
-Hole is typed with [Flow](https://flow.org/).
-
-#### `type Gate`
-`Gate` is your data processor. It can be a function, async function or native writable stream.
-
-```javascript
-type Gate = ((data: any) => (any|Promise<any>))
-    | stream$Transform
-    | stream$Writable;
-```
-
-#### `type GateOption`
-`GateOption` is a type to pass to Node Stream as an option. If it's number, it's used as highWaterMark, which is 16 by default.
-
-```javascript
-type stream$writableStreamOptions = {
-  highWaterMark?: number,
-  decodeString?: boolean,
-  objectMode?: boolean
-};
-
-type GateOption = stream$writableStreamOptions | number;
-```
 
 # License
 

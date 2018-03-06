@@ -7,16 +7,16 @@ import {Transform, Writable} from 'stream';
 import LazyPromise from 'lazy-promise';
 import HoleTransform from './hole-transform';
 
-export type Gate = ((data: any) => (any | Promise<any>))
+export type Processor = ((data: any) => (any | Promise<any>))
     | stream$Transform
     | stream$Writable;
 
-export type GateOption = {
+export type ProcessorOption = {
   maxParallel?: number,
   highWaterMark?: number,
 };
 
-export type GateInfo = [Gate, GateOption];
+export type ProcessorInfo = [Processor, ProcessorOption];
 
 export function holeWithStream(readable: stream$Readable): Hole {
   return new Hole(readable);
@@ -32,25 +32,23 @@ export default function hole(obj: any): Hole {
 
 export class Hole extends LazyPromise {
   _readable: stream$Readable;
-  _gates: Array<GateInfo>;
+  _procInfoArray: Array<ProcessorInfo>;
 
   constructor(readable: stream$Readable) {
-    super(_start);
+    super(start);
     this._readable = readable;
-    // We need to make the last gate behave a writable stream. In order to do that,
-    // Hole need to store the functions until it starts and turn these to streams later.
-    this._gates = [];
+    this._procInfoArray = [];
   }
 
-  pipe(gate: Gate, opts?: GateOption | number): Hole {
+  pipe(p: Processor, opts?: ProcessorOption | number): Hole {
     const options = typeof opts === 'number' ? {maxParallel: opts}
         : opts || {};
-    this._gates = [...this._gates, [gate, options]];
+    this._procInfoArray = [...this._procInfoArray, [p, options]];
     return this;
   }
 
   split() {
-    const gate = new Transform({
+    const p = new Transform({
       objectMode: true,
       transform(chunks, enc, callback) {
         if (!Array.isArray(chunks)) {
@@ -66,13 +64,13 @@ export class Hole extends LazyPromise {
         }
       }
     });
-    this._gates = [...this._gates, [gate, {}]];
+    this._procInfoArray = [...this._procInfoArray, [p, {}]];
     return this;
   }
 
   lineup(size: number) {
     let buffered = [];
-    const gate = new Transform({
+    const p = new Transform({
       transform(chunk, enc, callback) {
         buffered = [...buffered, chunk];
         if (buffered.length >= size) {
@@ -89,16 +87,16 @@ export class Hole extends LazyPromise {
       },
       objectMode: true,
     });
-    this._gates = [...this._gates, [gate, {}]];
+    this._procInfoArray = [...this._procInfoArray, [p, {}]];
     return this;
   }
 }
 
-function _start(resolve: Function, reject: Function) {
-  if (this._gates.length <= 0) {
+function start(resolve: Function, reject: Function) {
+  if (this._procInfoArray.length <= 0) {
     throw new Error('Hole requires at least one ".pipe(fn)" call.');
   }
-  const transforms = this._gates.map(toStream); // (gate, i, gates) => toStream(gate, i === gates.length - 1));
+  const transforms = this._procInfoArray.map(toStream);
   const voidWriter = new Writable({objectMode: true, write(data, enc, callback) { callback(); }});
 
   const streams = [
