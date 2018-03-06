@@ -7,20 +7,16 @@ import {Transform, Writable} from 'stream';
 import LazyPromise from 'lazy-promise';
 import HoleTransform from './hole-transform';
 
-// From https://github.com/facebook/flow/blob/v0.64.0/lib/node.js#L1436
-type stream$writableStreamOptions = {
-  highWaterMark?: number,
-  decodeString?: boolean,
-  objectMode?: boolean
-};
-
-export type GateOption = stream$writableStreamOptions | number;
-
 export type Gate = ((data: any) => (any | Promise<any>))
     | stream$Transform
     | stream$Writable;
 
-export type GateInfo = [Gate, stream$writableStreamOptions];
+export type GateOption = {
+  maxParallel?: number,
+  highWaterMark?: number,
+};
+
+export type GateInfo = [Gate, GateOption];
 
 export function holeWithStream(readable: stream$Readable): Hole {
   return new Hole(readable);
@@ -46,11 +42,10 @@ export class Hole extends LazyPromise {
     this._gates = [];
   }
 
-  pipe(gate: Gate, opts: GateOption = {}): Hole {
-    if (typeof opts === 'number') {
-      opts = {highWaterMark: opts};
-    }
-    this._gates = [...this._gates, [gate, opts]];
+  pipe(gate: Gate, opts?: GateOption | number): Hole {
+    const options = typeof opts === 'number' ? {maxParallel: opts}
+        : opts || {};
+    this._gates = [...this._gates, [gate, options]];
     return this;
   }
 
@@ -104,7 +99,7 @@ function _start(resolve: Function, reject: Function) {
     throw new Error('Hole requires at least one ".pipe(fn)" call.');
   }
   const transforms = this._gates.map(toStream); // (gate, i, gates) => toStream(gate, i === gates.length - 1));
-  const voidWriter = new Writable({objectMode: true, write(data, enc, callback) { callback() }});
+  const voidWriter = new Writable({objectMode: true, write(data, enc, callback) { callback(); }});
 
   const streams = [
     this._readable,

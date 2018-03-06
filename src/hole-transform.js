@@ -1,16 +1,13 @@
 import ParallelTransform from 'parallel-transform-stream';
-import {Writable} from 'stream';
-
-const defaultWritableHighWaterMark = getDefaultWritableHighWaterMark();
 
 export default class HoleTransform extends ParallelTransform {
   constructor(asyncFn, options) {
 
     super({
-      maxParallel: defaultWritableHighWaterMark,
-      highWaterMark: defaultWritableHighWaterMark,
       ...options,
       objectMode: true,
+      transform: undefined,
+      flush: undefined,
     });
 
     // Ugly hack for ParallelTransform emitting `finish`
@@ -48,13 +45,4 @@ export default class HoleTransform extends ParallelTransform {
     return super.emit.apply(this, args);
   }
 
-}
-
-function getDefaultWritableHighWaterMark() {
-  const w = new Writable({objectMode: true});
-  // Node v9.4.0 or higher only returns number 16
-  const rv = w.writableHighWaterMark || 16;
-  // $FlowFixMe https://github.com/facebook/flow/pull/5763
-  w.destroy();
-  return rv;
 }
