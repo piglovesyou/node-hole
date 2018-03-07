@@ -16,7 +16,7 @@ export type ProcessorOption = {
   highWaterMark?: number,
 };
 
-export type ProcessorInfo = [Processor, ProcessorOption];
+export type ProcessorInfo = [Processor<any, any>, ProcessorOption];
 
 export function fromStream(readable: stream$Readable): Hole {
   return new Hole(readable);
