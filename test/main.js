@@ -253,6 +253,23 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual1, expect1);
     assert.deepStrictEqual(actual2, expect2);
   });
+
+  it.only('.catch() stops stream in middle and catches error', async function () {
+    const expect = 'boom';
+    let actual = null;
+    const arr = [...new Array(10)].map((e, i) => i);
+    await holeWithArray(arr)
+        .pipe(async i => {
+          await timeout(Math.random() * 100);
+          if (i === 4) {
+            throw new Error('boom');
+          }
+        }, 2)
+        .catch(err => {
+          actual = err.message;
+        });
+    assert.deepStrictEqual(actual, expect);
+  });
 });
 
 function timeout(ms) {
