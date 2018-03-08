@@ -23,19 +23,24 @@ export default class HoleTransform extends ParallelTransform {
   // noinspection JSUnusedGlobalSymbols
   _parallelTransform(data, enc, callback) {
     this._consumingLength++;
-    const rv = this._asyncFn.call(this, data);
-    Promise.resolve(rv)
-        .then(resolved => {
-          callback(null, resolved);
-          this._consumingLength--;
-          if (this._finished && this._consumingLength === 0) {
-            setImmediate(() => {
-              return super.emit('finish');
-            });
-          }
-        });
+    try {
+      const rv = this._asyncFn.call(this, data);
+      Promise.resolve(rv)
+          .then(resolved => {
+            callback(null, resolved);
+            this._consumingLength--;
+            if (this._finished && this._consumingLength === 0) {
+              setImmediate(() => {
+                super.emit('finish');
+              });
+            }
+          }).catch(callback);
+    } catch (err) {
+      callback(err);
+    }
   }
 
+  // noinspection JSUnusedGlobalSymbols
   emit(...args) {
     const [type] = args;
     if (type === 'finish') {
