@@ -24,7 +24,7 @@ export default class HoleTransform extends ParallelTransform {
   _parallelTransform(data, enc, callback) {
     this._consumingLength++;
     try {
-      const rv = this._asyncFn.call(this, data);
+      const rv = this._asyncFn(data);
       Promise.resolve(rv)
           .then(resolved => {
             callback(null, resolved);

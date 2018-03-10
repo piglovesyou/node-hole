@@ -276,6 +276,22 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expect);
     assert(done.length < arr.length);
   });
+
+  it('allows .push(data) inside a processor that runs a transformer context', async function () {
+    const expect = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
+    const actual = [];
+    await hole({})
+        .pipe(async function () {
+          for (let i = 0; i < 10; i++) {
+            await timeout(Math.random() * 100);
+            this.push(i);
+          }
+        })
+        .pipe(i => {
+          actual.push(i);
+        });
+    assert.deepStrictEqual(actual, expect);
+  });
 });
 
 function timeout(ms) {
