@@ -7,7 +7,7 @@ import {Transform, Writable} from 'stream';
 import LazyPromise from 'lazy-promise';
 import HoleTransform from './transform';
 
-export type Processor<T, U> = ((data: T) => (U | Promise<U>))
+export type Processor<T, U> = ((data: (T)) => (U | Promise<U> | void | Promise<void>))
     | stream$Transform
     | stream$Writable;
 

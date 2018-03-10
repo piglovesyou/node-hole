@@ -13,7 +13,7 @@ parallel('Hole', function () {
   it('hole(obj) takes object', async function () {
     const expect = {ohh: 'yeah'};
     let actual = null;
-    await hole({})
+    await hole({ohh: null})
         .pipe(obj => {
           obj.ohh = 'yeah';
           return obj;
@@ -172,7 +172,7 @@ parallel('Hole', function () {
   it('.split() splits an passed array', async function () {
     const expect = ['a', 'b', 'c'];
     let actual = [];
-    await hole({})
+    await hole({items: undefined})
         .pipe(async obj => {
           obj.items = ['a', 'b', 'c'];
           return obj;
