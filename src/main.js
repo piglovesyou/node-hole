@@ -90,6 +90,13 @@ export class Hole extends LazyPromise {
     this._procInfoArray = [...this._procInfoArray, [p, {}]];
     return this;
   }
+
+  collect() {
+    const results = [];
+    return this.pipe(data => {
+      results.push(data);
+    }).then(() => results);
+  }
 }
 
 function start(resolve: Function, reject: Function) {
