@@ -292,6 +292,22 @@ describe('Hole', function () {
         });
     assert.deepStrictEqual(actual, expect);
   });
+
+  it.only('.collect() returns Promise<Array<any>> of value returned by last process', async function () {
+    const expect = [40, 50, 60, 70, 80, 90, 100];
+    const actual = await holeWithArray([...Array(10)].map((_, i) => i))
+        .pipe(async n => {
+          await timeout(Math.random() * 100);
+          return n + 1;
+
+        })
+        .pipe(async n => {
+          await timeout(Math.random() * 100);
+          return n * 10;
+        })
+        .pipe(n => n >= 40 ? n : null);
+    assert.deepStrictEqual(actual, expect);
+  });
 });
 
 function timeout(ms) {
