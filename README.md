@@ -177,6 +177,18 @@ Example:
                           // [ 3, 4 ]
                           // [ 5 ]
 ```
+
+#### `.collect(): Promise<Array<any>>`
+
+It collects all returned data by last process and returns it as an array. Note that when number of stream data gets a lot, it oppresses room of memory.
+
+Example:
+```javascript
+	const results = await holeWithArray([1, 2, 3, 4, 5])
+      .pipe(n => n * 10);
+	console.log(results); // [10, 20, 30, 40, 50]
+```
+
 # License
 
 MIT
