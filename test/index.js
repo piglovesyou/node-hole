@@ -3,7 +3,7 @@
 import assert from 'assert';
 import stream from 'stream';
 import fs from 'fs';
-import hole, {holeWithArray, holeWithStream} from '../src/main';
+import hole, {holeWithArray, holeWithStream} from '../src/index';
 import split2 from 'split2';
 
 describe('Hole', function () {

@@ -12,7 +12,7 @@
   ],
   "homepage": "https://github.com/piglovesyou/node-hole",
   "bugs": "https://github.com/piglovesyou/node-hole/issues",
-  "main": "lib/main.js",
+  "main": "lib/index.js",
   "scripts": {
     "check": "flow check",
     "test": "npm run check && mocha --require @babel/register",

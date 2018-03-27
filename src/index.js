@@ -5,7 +5,7 @@ import streamify from 'stream-array';
 import isStream from 'is-stream';
 import {Transform, Writable} from 'stream';
 import LazyPromise from 'lazy-promise';
-import HoleTransform from './hole-transform';
+import HoleTransform from './transform';
 
 export type Processor = ((data: any) => (any | Promise<any>))
     | stream$Transform
