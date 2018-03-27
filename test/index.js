@@ -3,7 +3,7 @@
 import assert from 'assert';
 import stream from 'stream';
 import fs from 'fs';
-import hole, {holeWithArray, holeWithStream} from '../src/index';
+import hole, {fromArray, fromStream} from '../src/index';
 import split2 from 'split2';
 
 describe('Hole', function () {
@@ -23,21 +23,21 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expect);
   });
 
-  it('holeWithArray(array) takes array', async function () {
+  it('fromArray(array) takes array', async function () {
     const expect = ['a', 'b', 'c'];
     const actual = [];
-    await holeWithArray(['a', 'b', 'c'])
+    await fromArray(['a', 'b', 'c'])
         .pipe(letter => {
           actual.push(letter);
         });
     assert.deepStrictEqual(actual, expect);
   });
 
-  it('holeWithStream(readable) takes readable', async function () {
+  it('fromStream(readable) takes readable', async function () {
     const expect = [0, 1, 2, 3, 4];
     const actual = [];
     let i = 0;
-    await holeWithStream(new stream.Readable({
+    await fromStream(new stream.Readable({
       read() {
         this.push(i < 5 ? i : null);
         i++;
@@ -59,7 +59,7 @@ describe('Hole', function () {
       {upper: 'E'},
     ];
     const actual = [];
-    await holeWithArray(['a', 'b', 'c', 'd', 'e'])
+    await fromArray(['a', 'b', 'c', 'd', 'e'])
         .pipe(letter => letter.toUpperCase())
         .pipe(upper => actual.push({upper}));
     assert.deepStrictEqual(actual, expect);
@@ -71,7 +71,7 @@ describe('Hole', function () {
     setTimeout(() => {
       assert.deepStrictEqual(actual, expect, 'It should buffer all in the middle');
     }, 100);
-    await holeWithArray([1, 2, 3, 4, 5])
+    await fromArray([1, 2, 3, 4, 5])
         .pipe(async n => {
           actual++;
           await timeout(300);
@@ -87,7 +87,7 @@ describe('Hole', function () {
     const expect = ['A', 'B', 'C', 'D', 'E'];
     const actualUnordered = [];
     const actualOrdered = [];
-    await holeWithArray(['a', 'b', 'c', 'd', 'e'])
+    await fromArray(['a', 'b', 'c', 'd', 'e'])
         .pipe(letter => letter.toUpperCase())
         .pipe(async (letter) => {
           await timeout(Math.random() * 100);
@@ -110,7 +110,7 @@ describe('Hole', function () {
       },
       objectMode: true,
     });
-    await holeWithArray(['a', 'b', 'c', 'd', 'e'])
+    await fromArray(['a', 'b', 'c', 'd', 'e'])
         .pipe(t)
         .pipe(letter => {
           actual.push(letter);
@@ -121,7 +121,7 @@ describe('Hole', function () {
   it('.pipe(transform) accepts third party transform', async function () {
     const expect = '  "name": "hole",';
     const lines = [];
-    await holeWithStream(fs.createReadStream('./package.json'))
+    await fromStream(fs.createReadStream('./package.json'))
         .pipe(split2())
         .pipe((line) => {
           lines.push(line);
@@ -132,7 +132,7 @@ describe('Hole', function () {
   it('.pipe(fn) filters out values by returning null or undefined', async function () {
     const expect = [4, 5, 6];
     const actual = [];
-    await holeWithArray([1, 2, 3, 4, 5, 6, 7, 8])
+    await fromArray([1, 2, 3, 4, 5, 6, 7, 8])
         .pipe(function (n) {
           if (4 <= n) {
             return n;
@@ -156,7 +156,7 @@ describe('Hole', function () {
       ...Array(expect)
           .keys()
     ];
-    await holeWithArray(largeArray)
+    await fromArray(largeArray)
         .pipe(index => {
           return index;
         })
@@ -201,7 +201,7 @@ describe('Hole', function () {
     const expect = 10 * 1000;
     let actual = 0;
     const r = createReadable(expect);
-    await holeWithStream(r)
+    await fromStream(r)
         .pipe(async () => {
           await timeout(Math.random() * 10);
           actual++;
@@ -213,7 +213,7 @@ describe('Hole', function () {
     const expect = 500;
     let actual = null;
     const r = createReadable(1000);
-    await holeWithStream(r)
+    await fromStream(r)
         .pipe(async i => {
           await timeout(Math.random() * 10);
           return i;
@@ -239,7 +239,7 @@ describe('Hole', function () {
     const expect2 = [100, 200];
     const actual1 = [];
     const actual2 = [];
-    await holeWithStream(createReadable(23))
+    await fromStream(createReadable(23))
         .pipe(n => n * 10)
         .concat(5)
         .pipe(packed => {
@@ -259,7 +259,7 @@ describe('Hole', function () {
     let actual = null;
     const done = [];
     const arr = [...new Array(10)].map((e, i) => i);
-    await holeWithArray(arr)
+    await fromArray(arr)
         .pipe(async i => {
           await timeout(Math.random() * 100);
           if (i === 4) {
@@ -295,7 +295,7 @@ describe('Hole', function () {
 
   it('.collect() returns Promise<Array<any>> of value returned by last process', async function () {
     const expect = [40, 50, 60, 70, 80, 90, 100];
-    const actual = await holeWithArray([...Array(10)].map((_, i) => i))
+    const actual = await fromArray([...Array(10)].map((_, i) => i))
         .pipe(async n => {
           await timeout(Math.random() * 100);
           return n + 1;

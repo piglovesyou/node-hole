@@ -18,16 +18,16 @@ export type ProcessorOption = {
 
 export type ProcessorInfo = [Processor, ProcessorOption];
 
-export function holeWithStream(readable: stream$Readable): Hole {
+export function fromStream(readable: stream$Readable): Hole {
   return new Hole(readable);
 }
 
-export function holeWithArray(array: Array<any>): Hole {
-  return holeWithStream(streamify(array));
+export function fromArray(array: Array<any>): Hole {
+  return fromStream(streamify(array));
 }
 
 export default function hole(obj: any): Hole {
-  return holeWithArray([obj]);
+  return fromArray([obj]);
 }
 
 export class Hole extends LazyPromise {

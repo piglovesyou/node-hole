@@ -35,8 +35,8 @@ Then utilize it like below:
 # API
 
 * [`hole(object: any): Hole`](#holeobject-any-hole)
-* [`holeWithArray(array: Array<any>): Hole`](#holewitharrayarray-arrayany-hole)
-* [`holeWithStream(readable: ReadableStream): Hole`](#holewithstreamreadable-readablestream-hole)
+* [`fromArray(array: Array<any>): Hole`](#fromarrayarray-arrayany-hole)
+* [`fromStream(readable: ReadableStream): Hole`](#fromstreamreadable-readablestream-hole)
 * [`.pipe(processor: (any) => any, opts?: {highWaterMark?: number}): Hole`](#pipeprocessor-any--any-hole)
 * [`.pipe(processor: (any) => Promise<any>, opts?: {maxParallel?: number, highWaterMark?: number} | number?): Hole`](#pipeprocessor-any--promiseany-opts-maxparallel-number-highwatermark-number--number-hole)
 * [`.pipe(processor: Transform, opts?: {highWaterMark?: number}): Hole`](#pipeprocessor-transform-highwatermark-number-hole)
@@ -58,14 +58,14 @@ import hole from 'hole';
       .pipe(console.log)  // 1000
 ```
 
-#### `holeWithArray(array: Array<any>): Hole`
+#### `fromArray(array: Array<any>): Hole`
 A function to start stream with fixed multiple objects with an array.
 
 Example:
 ```javascript
-import {holeWithArray} from 'hole';
+import {fromArray} from 'hole';
 ...
-  await holeWithArray([1, 2, 3, 4, 5])
+  await fromArray([1, 2, 3, 4, 5])
       .pipe(n => n * 10)
       .pipe(console.log); // 10
                           // 20
@@ -74,17 +74,17 @@ import {holeWithArray} from 'hole';
                           // 50
 ```
 
-#### `holeWithStream(readable: ReadableStream): Hole`
+#### `fromStream(readable: ReadableStream): Hole`
 A function to start stream with an native Node readable stream.
 
 Example:
 ```javascript
-import {holeWithStream} from 'hole';
+import {fromStream} from 'hole';
 import fs from 'fs';
 import csv2 from 'csv2';
 ...
   const nameColumnIndex = 3;
-  await holeWithStream(fs.createReadableStream('./data.csv'))
+  await fromStream(fs.createReadableStream('./data.csv'))
       .pipe(csv2())
       .pipe(record => record[nameColumnIndex])
       .pipe(console.log); // James
@@ -105,7 +105,7 @@ If it returns `null` or `undefined`, that means it **filters out the data** that
 
 Example:
 ```javascript
-  await holeWithArray([1, 2, 3, 4, 5])
+  await fromArray([1, 2, 3, 4, 5])
       .pipe(n => {
         if (n > 2) return n;
       })
@@ -144,7 +144,7 @@ Also, it accepts an option value. If it's an object, 2 properties are acceptable
 
 Example:
 ```javascript
-    await holeWithArray([1, 2, 3, 4])
+    await fromArray([1, 2, 3, 4])
         .pipe(async page => {
           const posts = await getPosts(page);
           return posts.filter(post => post.author !== 'anonimous');
@@ -159,7 +159,7 @@ Example:
 #### `.pipe(processor: Transform, opts?: {highWaterMark?: number}): Hole`
 Also `.pipe()` accepts Node native Transformer object where you can utilize such as `csv2` and ``.
 
-[Example:](#holewithstreamreadable-readablestream-hole)
+[Example:](#fromstreamreadable-readablestream-hole)
 
 #### `.split(): Hole`
 It splits an array the previous process returns into pieces the next process can handle one by one.
@@ -171,7 +171,7 @@ It concatenates number of subsequent data and passes an array of number of the `
 
 Example:
 ```javascript
-  await holeWithArray([1, 2, 3, 4, 5])
+  await fromArray([1, 2, 3, 4, 5])
       .concat(2)
       .pipe(console.log); // [ 1, 2 ]
                           // [ 3, 4 ]
@@ -184,7 +184,7 @@ It collects all returned data by last process and returns it as an array. Note t
 
 Example:
 ```javascript
-	const results = await holeWithArray([1, 2, 3, 4, 5])
+	const results = await fromArray([1, 2, 3, 4, 5])
       .pipe(n => n * 10);
 	console.log(results); // [10, 20, 30, 40, 50]
 ```
