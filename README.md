@@ -18,63 +18,63 @@ $ npm install hole
 Then utilize it like below:
 
 ```javascript
-  // Let's say we want to save all post details into a local search index.
-  
-  await hole(await getPageSize())                 // Start with fetching page size of whole posts
-      .pipe(pageSize => _.range(1, pageSize + 1)) // Create pages array like [1, 2, 3, 4, ...]
-      .split()                                    // For every page
-      .pipe(page => getPosts(page))               // Get a post list
-      .split()                                    // For every post
-      .pipe(post => getPostDetail(post.id), 2)    // Get a detail of post, with maximum parallel request of 2
-      .pipe(detail => saveToSearchIndex(detail))  // And save the detail
-      .catch(err => console.log(err));            // On any error in the middle, it stops stream
-                                                  // with an error that is able to catch
-  console.log('done.');
+// Let's say we want to save all post details into a local search index.
+
+await hole(await getPageSize())                 // Start with fetching page size of whole posts
+    .pipe(pageSize => _.range(1, pageSize + 1)) // Create pages array like [1, 2, 3, 4, ...]
+    .split()                                    // For every page
+    .pipe(page => getPosts(page))               // Get a post list
+    .split()                                    // For every post
+    .pipe(post => getPostDetail(post.id), 2)    // Get a detail of post, with maximum parallel request of 2
+    .pipe(detail => saveToSearchIndex(detail))  // And save the detail
+    .catch(err => console.log(err));            // On any error in the middle, it stops stream
+                                                // with an error that is able to catch
+console.log('done.');
 ```
 
-# API
+# API 
+* Exported functions
+    * [`hole(object: any): Hole`](#holeobject-any-hole)
+    * [`fromArray(array: Array<any>): Hole`](#fromarrayarray-arrayany-hole)
+    * [`fromStream(readable: ReadableStream): Hole`](#fromstreamreadable-readablestream-hole)
+* Chaining functions of `Hole`
+    * [`.pipe(processor: (any) => any, opts?: {highWaterMark?: number}): Hole`](#pipeprocessor-any--any-opts-highwatermark-number-hole)
+    * [`.pipe(processor: (any) => Promise<any>, opts?: {maxParallel?: number, highWaterMark?: number} | number?): Hole`](#pipeprocessor-any--promiseany-opts-maxparallel-number-highwatermark-number--number-hole)
+    * [`.pipe(processor: Transform, opts?: {highWaterMark?: number}): Hole`](#pipeprocessor-transform-opts-highwatermark-number-hole)
+    * [`.split(): Hole`](#split-hole)
+    * [`.concat(size: number): Hole`](#concatsize-number-hole)
+    * [`.collect(): Promise<Array<any>>`](#collect-promisearrayany)
 
-* [`hole(object: any): Hole`](#holeobject-any-hole)
-* [`fromArray(array: Array<any>): Hole`](#fromarrayarray-arrayany-hole)
-* [`fromStream(readable: ReadableStream): Hole`](#fromstreamreadable-readablestream-hole)
-* [`.pipe(processor: (any) => any, opts?: {highWaterMark?: number}): Hole`](#pipeprocessor-any--any-hole)
-* [`.pipe(processor: (any) => Promise<any>, opts?: {maxParallel?: number, highWaterMark?: number} | number?): Hole`](#pipeprocessor-any--promiseany-opts-maxparallel-number-highwatermark-number--number-hole)
-* [`.pipe(processor: Transform, opts?: {highWaterMark?: number}): Hole`](#pipeprocessor-transform-highwatermark-number-hole)
-* [`.split(): Hole`](#split-hole)
-* [`.concat(size: number): Hole`](#concatsize-number-hole)
-
-## Exported functions
-
-#### `hole(object: any): Hole`
+### `hole(object: any): Hole`
 A function to start stream with any kind of a single JavaScript object.
 
 Example:
 ```javascript
 import hole from 'hole';
 //...
-  await hole(998)
-      .pipe(n => n + 1)
-      .pipe(n => n + 1)
-      .pipe(console.log)  // 1000
+await hole(998)
+    .pipe(n => n + 1)
+    .pipe(n => n + 1)
+    .pipe(console.log)  // 1000
 ```
 
-#### `fromArray(array: Array<any>): Hole`
+### `fromArray(array: Array<any>): Hole`
 A function to start stream with fixed multiple objects with an array.
 
 Example:
 ```javascript
 import {fromArray} from 'hole';
 ...
-  await fromArray([1, 2, 3, 4, 5])
-      .pipe(n => n * 10)
-      .pipe(console.log); // 10
-                          // 20
-                          // 30
-                          // 40
-                          // 50
+await fromArray([1, 2, 3, 4, 5])
+    .pipe(n => n * 10)
+    .pipe(console.log); // 10
+                        // 20
+                        // 30
+                        // 40
+                        // 50
 ```
 
-#### `fromStream(readable: ReadableStream): Hole`
+### `fromStream(readable: ReadableStream): Hole`
 A function to start stream with an native Node readable stream.
 
 Example:
@@ -94,24 +94,22 @@ import csv2 from 'csv2';
                           // ...
 ```
 
-## Chaining functions of `Hole`
-
 Hole extends [`LazyPromise`](https://github.com/then/lazy-promise) that starts streaming when `.then()` or `.catch()` is called. Other extended functions are listed below.
 
-#### `.pipe(processor: (any) => any, opts?: {highWaterMark?: number}): Hole`
+### `.pipe(processor: (any) => any, opts?: {highWaterMark?: number}): Hole`
 The function "processor" gets data passed by the previous processor. The returned value is passed to the next.
 
 If it returns `null` or `undefined`, that means it **filters out the data** that will not be used any more.
 
 Example:
 ```javascript
-  await fromArray([1, 2, 3, 4, 5])
-      .pipe(n => {
-        if (n > 2) return n;
-      })
-      .pipe(console.log); // 3
-                          // 4
-                          // 5
+await fromArray([1, 2, 3, 4, 5])
+  .pipe(n => {
+    if (n > 2) return n;
+  })
+  .pipe(console.log); // 3
+                      // 4
+                      // 5
 ```
 
 Note that a processor function will be called with a transform's `this` context: you can use `.push(data)` as usual in `transform()` function.
@@ -119,20 +117,20 @@ Note that a processor function will be called with a transform's `this` context:
 Example:
 
 ```javascript
-  await hole(5)
-      .pipe(function decrementAndPush(n) {
-        if (n <= 0) return;
-        this.push(n);
-        decrementAndPush.call(this, n - 1);
-      })
-      .pipe(console.log); // 5
-                          // 4
-                          // 3
-                          // 2
-                          // 1
+await hole(5)
+    .pipe(function decrementAndPush(n) {
+      if (n <= 0) return;
+      this.push(n);
+      decrementAndPush.call(this, n - 1);
+    })
+    .pipe(console.log); // 5
+                        // 4
+                        // 3
+                        // 2
+                        // 1
 ```
 
-#### `.pipe(processor: (any) => Promise<any>, opts?: {maxParallel?: number, highWaterMark?: number} | number?): Hole`
+### `.pipe(processor: (any) => Promise<any>, opts?: {maxParallel?: number, highWaterMark?: number} | number?): Hole`
 When processor returns a promise object, its **resolved value** will be passed to the next processor.
 
 Also, it accepts an option value. If it's an object, 2 properties are acceptable. If it's a number, it'll be passed as `maxParallel`.
@@ -144,49 +142,49 @@ Also, it accepts an option value. If it's an object, 2 properties are acceptable
 
 Example:
 ```javascript
-    await fromArray([1, 2, 3, 4])
-        .pipe(async page => {
-          const posts = await getPosts(page);
-          return posts.filter(post => post.author !== 'anonimous');
-        }, 2) // Limit maxParallel to 2
-        .split()
-        .pipe(post => console.log(post.title))  // Lorem ipsum ...
-                                                // Ut enim ad...
-                                                // Duis aute irure...
-                                                // Excepteur sint...
+await fromArray([1, 2, 3, 4])
+  .pipe(async page => {
+    const posts = await getPosts(page);
+    return posts.filter(post => post.author !== 'anonimous');
+  }, 2) // Limit maxParallel to 2
+  .split()
+  .pipe(post => console.log(post.title))  // Lorem ipsum ...
+                                          // Ut enim ad...
+                                          // Duis aute irure...
+                                          // Excepteur sint...
 ```
 
-#### `.pipe(processor: Transform, opts?: {highWaterMark?: number}): Hole`
+### `.pipe(processor: Transform, opts?: {highWaterMark?: number}): Hole`
 Also `.pipe()` accepts Node native Transformer object where you can utilize such as `csv2` and ``.
 
 [Example:](#fromstreamreadable-readablestream-hole)
 
-#### `.split(): Hole`
+### `.split(): Hole`
 It splits an array the previous process returns into pieces the next process can handle one by one.
 
 [Example:](#usage)
 
-#### `.concat(size: number): Hole`
+### `.concat(size: number): Hole`
 It concatenates number of subsequent data and passes an array of number of the `size` to the next process.
 
 Example:
 ```javascript
-  await fromArray([1, 2, 3, 4, 5])
-      .concat(2)
-      .pipe(console.log); // [ 1, 2 ]
-                          // [ 3, 4 ]
-                          // [ 5 ]
+await fromArray([1, 2, 3, 4, 5])
+    .concat(2)
+    .pipe(console.log); // [ 1, 2 ]
+                        // [ 3, 4 ]
+                        // [ 5 ]
 ```
 
-#### `.collect(): Promise<Array<any>>`
+### `.collect(): Promise<Array<any>>`
 
 It collects all returned data by last process and returns it as an array. Note that when number of stream data gets a lot, it oppresses room of memory.
 
 Example:
 ```javascript
-	const results = await fromArray([1, 2, 3, 4, 5])
-      .pipe(n => n * 10);
-	console.log(results); // [10, 20, 30, 40, 50]
+const results = await fromArray([1, 2, 3, 4, 5])
+    .pipe(n => n * 10);
+console.log(results); // [10, 20, 30, 40, 50]
 ```
 
 # License
