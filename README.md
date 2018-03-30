@@ -39,7 +39,7 @@ console.log('done.');
     * [`fromStream(readable: ReadableStream): Hole`](#fromstreamreadable-readablestream-hole)
 * Chaining functions of `Hole`
     * [`.pipe(processor: (any) => any, opts?: {highWaterMark?: number}): Hole`](#pipeprocessor-any--any-opts-highwatermark-number-hole)
-    * [`.pipe(processor: (any) => Promise<any>, opts?: {maxParallel?: number, highWaterMark?: number} | number?): Hole`](#pipeprocessor-any--promiseany-opts-maxparallel-number-highwatermark-number--number-hole)
+    * [`.pipe(processor: (any) => Promise<any>, opts?: {maxParallel?: number, highWaterMark?: number} | number): Hole`](#pipeprocessor-any--promiseany-opts-maxparallel-number-highwatermark-number--number-hole)
     * [`.pipe(processor: Transform, opts?: {highWaterMark?: number}): Hole`](#pipeprocessor-transform-opts-highwatermark-number-hole)
     * [`.split(): Hole`](#split-hole)
     * [`.concat(size: number): Hole`](#concatsize-number-hole)
@@ -130,7 +130,7 @@ await hole(5)
                         // 1
 ```
 
-### `.pipe(processor: (any) => Promise<any>, opts?: {maxParallel?: number, highWaterMark?: number} | number?): Hole`
+### `.pipe(processor: (any) => Promise<any>, opts?: {maxParallel?: number, highWaterMark?: number} | number): Hole`
 When processor returns a promise object, its **resolved value** will be passed to the next processor.
 
 Also, it accepts an option value. If it's an object, 2 properties are acceptable. If it's a number, it'll be passed as `maxParallel`.
