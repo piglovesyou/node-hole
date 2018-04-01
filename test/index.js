@@ -168,7 +168,7 @@ describe('Hole', function () {
     assert.deepStrictEqual(actual, expect);
   });
 
-  it('.pieces() splits an passed array', async function () {
+  it('.split() splits an passed array', async function () {
     const expect = ['a', 'b', 'c'];
     let actual = [];
     await hole({})
@@ -180,6 +180,27 @@ describe('Hole', function () {
         .split()
         .pipe(item => {
           actual.push(item);
+        });
+    assert.deepStrictEqual(actual, expect);
+  });
+
+  it('.split() can split a large array', async function() {
+    const expect = 2 * 3000;
+    let actual = 0;
+    const data = [];
+    for (let i = 0; i < 2; i++) {
+      data.push(Array.from(Array(3000)).map((_,    i) => i));
+    }
+    await hole(data)
+        .split()
+        .pipe(async data => {
+          await timeout(Math.random() * 5);
+          return data;
+        })
+        .split()
+        .pipe(async () => {
+          await timeout(Math.random() * 5);
+          actual++;
         });
     assert.deepStrictEqual(actual, expect);
   });

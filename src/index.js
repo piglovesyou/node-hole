@@ -54,13 +54,22 @@ export class Hole extends LazyPromise {
         if (!Array.isArray(chunks)) {
           throw new Error('.split() must receive an array from a previous function.');
         }
-        push.call(this, chunks, 0);
-        callback();
+        push.call(this, callback, chunks, 0);
 
-        function push(chunks, curr) {
-          if (!chunks[curr]) return;
-          this.push(chunks[curr]);
-          push.call(this, chunks, curr + 1);
+        function push(callback, chunks, curr) {
+          if (chunks[curr] === undefined) {
+            callback();
+            return;
+          }
+          const bufferAvailable = this.push(chunks[curr]);
+          if (bufferAvailable) {
+            push.call(this, callback, chunks, curr + 1);
+            return;
+          }
+          // Avoid synchronous pushing over capacity of readable buffer
+          setImmediate(() => {
+            push.call(this, callback, chunks, curr + 1);
+          });
         }
       }
     });
