@@ -5,8 +5,9 @@ import stream from 'stream';
 import fs from 'fs';
 import hole, {fromArray, fromStream} from '../src/index';
 import split2 from 'split2';
+import parallel from 'mocha.parallel'
 
-describe('Hole', function () {
+parallel('Hole', function () {
   this.timeout(30 * 1000);
 
   it('hole(obj) takes object', async function () {
