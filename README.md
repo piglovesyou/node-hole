@@ -2,9 +2,9 @@
 Async friendly, stream-based task consuming utility for large amounts of data in Node.js.
 
 # Concept
-After years, it has been more important to write less-state code for me and naturally it has become more data-driven/functional style. But that style and async programming, inevitable in Node, are not always a good match. On one hand when you process too many async tasks at one time, you'd end up with `FATAL ERROR: CALL_AND_RETRY_2 Allocation failed - process out of memory`, `Error: socket hang up`, `errno: 'ETIMEDOUT'` or `errno: 'ECONNRESET'` message. On the other hand, it's not efficient at all when you process data one by one in sequence. Reactive Extensions might be a solution though, I didn't want to [tune timer functions](https://github.com/ReactiveX/RxJava/wiki/Backpressure#useful-operators-that-avoid-the-need-for-backpressure) for that problem; all I want is just to set **limit number of parallel execution** and finish a task in the best speed.
+After years, it has been more important to write less-state code for me and naturally it has become more data-driven/functional style. But that and async programming are not always a good match. On one hand when you process too many async tasks at once, `await Promise.all(promises100000)` for example, you'd end up with error messages such as `process out of memory`, `socket hang up`, `ETIMEDOUT` or `ECONNRESET`. On the other hand, it's not efficient at all when you process whole data one by one in sequence. Reactive Extensions might be a solution though, I didn't want to [tune timer functions](https://github.com/ReactiveX/RxJava/wiki/Backpressure#useful-operators-that-avoid-the-need-for-backpressure) for the problem; all I want is just to set **limit number of parallel execution** and finish a task at the best speed.
 
-Then Node Stream object mode with beautiful backpressuring mechanism comes in. Object mode lets you flow JavaScript object in a stream with **`highWaterMark` option**, which decides limit of number of buffering objects. By the native backpressure implementation, a busy writable stream reaching to its water mark requests upper readable stream to moderate amount of the flow. And thanks for [`parallel-stream`](https://github.com/mafintosh/parallel-transform), each part of a stream tries to fill full of buffers all the time as **it keeps order of data**.
+Then Node Stream object mode with beautiful backpressuring mechanism appears. Object mode lets you flow JavaScript object in a stream with **`highWaterMark` option**, which decides limit of number of buffering objects. By the native backpressure implementation, a busy writable stream halts data flowing and takes time before requesting another to upstream. And thanks to [`parallel-stream`](https://github.com/mafintosh/parallel-transform), a transform branches out to consume buffer parallely as **it keeps order of data**.
 
 Node Hole offers a fun, easy and efficient way of parallel data consuming by wrapping solid Node Stream implementation with async/promise friendly API.
 
@@ -15,7 +15,7 @@ To install `hole` in your project, run:
 $ npm install hole
 ```
 
-Then utilize it like below:
+then utilize it like below:
 
 ```javascript
 // Let's say we want to save all post details into a local search index.
@@ -23,10 +23,10 @@ Then utilize it like below:
 await hole(await getPageSize())                 // Start with fetching page size of whole posts
     .pipe(pageSize => _.range(1, pageSize + 1)) // Create pages array like [1, 2, 3, 4, ...]
     .split()                                    // For every page
-    .pipe(page => getPosts(page))               // Get a post list
+    .pipe(page => getPosts(page))               // (async) Get a post list
     .split()                                    // For every post
-    .pipe(post => getPostDetail(post.id), 2)    // Get a detail of post, with maximum parallel request of 2
-    .pipe(detail => saveToSearchIndex(detail))  // And save the detail
+    .pipe(post => getPostDetail(post.id), 2)    // (async) Get a detail of post, with maximum parallel request of 2
+    .pipe(detail => saveToSearchIndex(detail))  // (async) And save the detail
     .catch(err => console.log(err));            // On any error in the middle, it stops stream
                                                 // with an error that is able to catch
 console.log('done.');
@@ -131,9 +131,9 @@ await hole(5)
 ```
 
 ### `.pipe(processor: (any) => Promise<any>, opts?: {maxParallel?: number, highWaterMark?: number} | number): Hole`
-When processor returns a promise object, its **resolved value** will be passed to the next processor.
+When a processor returns a promise object, its **resolved value** will be passed to the next processor.
 
-Also, it accepts an option value. If it's an object, 2 properties are acceptable. If it's a number, it'll be passed as `maxParallel`.
+Also, it accepts an option. If it's an object, 2 properties are acceptable. If it's a number, it'll be passed as `maxParallel`.
 
 | Option property       | Default value | Meaning  |
 | ------------- | ------------- | ----- |
@@ -160,12 +160,12 @@ Also `.pipe()` accepts Node native Transformer object where you can utilize such
 [Example:](#fromstreamreadable-readablestream-hole)
 
 ### `.split(): Hole`
-It splits an array the previous process returns into pieces the next process can handle one by one.
+It splits an array that a previous process returns so the next process can handle each element of the array.
 
 [Example:](#usage)
 
 ### `.concat(size: number): Hole`
-It concatenates number of subsequent data and passes an array of number of the `size` to the next process.
+It concatenates sequential data to be size of array. It is useful to post multiple data at once in the way that [Elasticsearch Bulk API](https://www.elastic.co/guide/en/elasticsearch/reference/6.2/docs-bulk.html) does.
 
 Example:
 ```javascript
@@ -178,12 +178,13 @@ await fromArray([1, 2, 3, 4, 5])
 
 ### `.collect(): Promise<Array<any>>`
 
-It collects all returned data by last process and returns it as an array. Note that when number of stream data gets a lot, it oppresses room of memory.
+It collects all data that the previous process returns and gives you an array. Note that, when number of data gets a lot, it might oppresse room of memory.
 
 Example:
 ```javascript
 const results = await fromArray([1, 2, 3, 4, 5])
-    .pipe(n => n * 10);
+    .pipe(n => n * 10)
+    .collect();
 console.log(results); // [10, 20, 30, 40, 50]
 ```
 
