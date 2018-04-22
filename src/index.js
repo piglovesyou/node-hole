@@ -6,27 +6,17 @@ import isStream from 'is-stream';
 import {Transform, Writable} from 'stream';
 import LazyPromise from 'lazy-promise';
 import HoleTransform from './transform';
+import type {Processor, ProcessorInfo, ProcessorOption} from './types';
 
-export type Processor<T, U> = ((data: (T)) => (U | Promise<U> | void | Promise<void>))
-    | stream$Transform
-    | stream$Writable;
-
-export type ProcessorOption = {
-  maxParallel?: number,
-  highWaterMark?: number,
-};
-
-export type ProcessorInfo = [Processor<any, any>, ProcessorOption];
-
-export function fromStream(readable: stream$Readable): Hole {
+export function fromStream(readable: stream$Readable): Hole<any> {
   return new Hole(readable);
 }
 
-export function fromArray(array: Array<any>): Hole {
+export function fromArray<T>(array: Array<T>): Hole<T> {
   return fromStream(streamify(array));
 }
 
-export default function hole(obj: any): Hole {
+export default function hole<T>(obj: T): Hole<T> {
   return fromArray([obj]);
 }
 
@@ -40,14 +30,13 @@ export class Hole<T> extends LazyPromise {
     this._procInfoArray = [];
   }
 
-  pipe<U>(p: Processor<T, U>, opts?: ProcessorOption | number): Hole<U> {
-    const options = typeof opts === 'number' ? {maxParallel: opts}
-        : opts || {};
+  pipe<U>(p: Processor<T, U>, opts?: (ProcessorOption | number)): Hole<U> {
+    const options = typeof opts === 'number' ? {maxParallel: opts} : opts || {};
     this._procInfoArray = [...this._procInfoArray, [p, options]];
     return ((this: any): Hole<U>);
   }
 
-  split() {
+  split(): Hole<$ElementType<T, any>> {
     const p = new Transform({
       objectMode: true,
       transform(chunks, enc, callback) {
@@ -74,10 +63,10 @@ export class Hole<T> extends LazyPromise {
       }
     });
     this._procInfoArray = [...this._procInfoArray, [p, {}]];
-    return this;
+    return (this: any);
   }
 
-  concat(size: number) {
+  concat(size: number): Hole<Array<T>> {
     let buffered = [];
     const p = new Transform({
       transform(chunk, enc, callback) {
@@ -97,10 +86,10 @@ export class Hole<T> extends LazyPromise {
       objectMode: true,
     });
     this._procInfoArray = [...this._procInfoArray, [p, {}]];
-    return this;
+    return ((this: any): Hole<Array<T>>);
   }
 
-  collect() {
+  collect(): Array<T> {
     const results = [];
     return this.pipe(data => {
       results.push(data);

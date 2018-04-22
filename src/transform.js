@@ -1,7 +1,10 @@
+// @flow
+
 import ParallelTransform from 'parallel-transform-stream';
+import type {Processor, ProcessorOption} from './types';
 
 export default class HoleTransform extends ParallelTransform {
-  constructor(asyncFn, options) {
+  constructor(asyncFn: Processor<any, any>, options?: ProcessorOption) {
 
     super({
       ...options,
@@ -21,7 +24,7 @@ export default class HoleTransform extends ParallelTransform {
   }
 
   // noinspection JSUnusedGlobalSymbols
-  _parallelTransform(data, enc, callback) {
+  _parallelTransform(data: any, enc: any, callback: any) {
     this._consumingLength++;
     try {
       const rv = this._asyncFn(data);
@@ -41,7 +44,7 @@ export default class HoleTransform extends ParallelTransform {
   }
 
   // noinspection JSUnusedGlobalSymbols
-  emit(...args) {
+  emit(...args: Array<any>) {
     const [type] = args;
     if (type === 'finish') {
       this._finished = true;
