@@ -31,12 +31,12 @@ export class Hole<T> extends LazyPromise {
   }
 
   pipe<U>(p: Processor<T, U>, opts?: (ProcessorOption | number)): Hole<U> {
-    const options = typeof opts === 'number' ? {maxParallel: opts} : opts || {};
+    const options: ProcessorOption = typeof opts === 'number' ? {maxParallel: opts} : opts || {};
     this._procInfoArray = [...this._procInfoArray, [p, options]];
     return ((this: any): Hole<U>);
   }
 
-  split(): Hole<$ElementType<T, any>> {
+  split(): Hole<$ElementType<T, number>> {
     const p = new Transform({
       objectMode: true,
       transform(chunks, enc, callback) {
@@ -90,6 +90,7 @@ export class Hole<T> extends LazyPromise {
   }
 
   collect(): Array<T> {
+    // noinspection JSMismatchedCollectionQueryUpdate
     const results = [];
     return this.pipe(data => {
       results.push(data);

@@ -1,6 +1,6 @@
 // @flow
 
-export type ProcessorValue<U> = U | Promise<U> | Promise<null> | Promise<void> | null | void ;
+export type ProcessorValue<U> = U | Promise<U> | null | void | Promise<null> | Promise<void> ;
 
 export type Processor<T, U> = ((data: T) => ProcessorValue<U>)
     | stream$Transform

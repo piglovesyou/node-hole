@@ -13,7 +13,7 @@ parallel('Hole', function () {
   it('hole(obj) takes object', async function () {
     const expect = {ohh: 'yeah'};
     let actual = null;
-    await hole({ohh: null})
+    await hole({ohh: 'ohh'})
         .pipe(obj => {
           obj.ohh = 'yeah';
           return obj;
