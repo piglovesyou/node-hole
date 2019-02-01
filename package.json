@@ -36,15 +36,15 @@
     "stream-array": "^1.1.2"
   },
   "devDependencies": {
-    "@babel/cli": "^7.0.0-rc.2",
-    "@babel/core": "^7.0.0-rc.2",
-    "@babel/plugin-proposal-object-rest-spread": "^7.0.0-rc.2",
-    "@babel/preset-env": "^7.0.0-rc.2",
-    "@babel/preset-flow": "^7.0.0-rc.2",
-    "@babel/register": "^7.0.0-rc.2",
-    "flow-bin": "^0.79.1",
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.2.2",
+    "@babel/plugin-proposal-object-rest-spread": "^7.3.1",
+    "@babel/preset-env": "^7.3.1",
+    "@babel/preset-flow": "^7.0.0",
+    "@babel/register": "^7.0.0",
+    "flow-bin": "^0.92.0",
     "flow-copy-source": "^2.0.2",
-    "mocha": "^5.2.0",
+    "mocha": "^6.0.0-1",
     "mocha.parallel": "^0.15.5",
     "split2": "^3.0.0"
   }
