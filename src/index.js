@@ -97,7 +97,7 @@ export class Hole<T> extends LazyPromise {
     return ((this: any): Hole<Array<T>>);
   }
 
-  collect(): Array<T> {
+  collect(): Promise<Array<T>> {
     // noinspection JSMismatchedCollectionQueryUpdate
     const results = [];
     return this.pipe((data) => {

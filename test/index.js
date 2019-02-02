@@ -348,9 +348,9 @@ function createReadable(size) {
 }
 
 // noinspection JSUnusedLocalSymbols
-function forFlowTypesCheck() {
+async function forFlowTypesCheck() {
 
-  hole('1')
+  await hole('1')
       .pipe(str => {
         // noinspection BadExpressionStatementJS $ExpectError
         (str: number);
@@ -369,7 +369,7 @@ function forFlowTypesCheck() {
         return n * n;
       });
 
-  fromArray([2,3,4])
+  await fromArray([2,3,4])
       .pipe(num => num >= 3 ? num : null)
       .pipe(num => {
         // noinspection BadExpressionStatementJS
@@ -379,7 +379,7 @@ function forFlowTypesCheck() {
       .pipe(num => 10 * num)
       .collect();
 
-  fromArray([2,3,4])
+  const array = await fromArray([2,3,4])
       .pipe(n => {
         return [n, n * 10, n *100]
       })
@@ -387,6 +387,10 @@ function forFlowTypesCheck() {
       .pipe(n => {
         // noinspection BadExpressionStatementJS $ExpectError
         (n: string);
-      });
 
+        return n;
+      })
+      .collect();
+
+  (array: Array<number>);
 }
