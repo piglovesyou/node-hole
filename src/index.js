@@ -30,10 +30,18 @@ export class Hole<T> extends LazyPromise {
     this._procInfoArray = [];
   }
 
-  pipe<U>(p: Processor<T, U>, opts?: (ProcessorOption | number)): Hole<U> {
+  pipe<U, V>(p: Processor<T, U>, opts?: (ProcessorOption | number)): $Call<
+      & (stream$Readable => Hole<any>) // Cannot type
+      & (stream$Writable => Hole<any>) // Cannot type
+      & (Function => $Call<
+        & (Promise<?V> => Hole<V>)
+        & (?V => Hole<V>),
+        U
+      >),
+      Processor<T, U>> {
     const options: ProcessorOption = typeof opts === 'number' ? {maxParallel: opts} : opts || {};
     this._procInfoArray = [...this._procInfoArray, [p, options]];
-    return ((this: any): Hole<U>);
+    return (this: any);
   }
 
   split(): Hole<$ElementType<T, number>> {
@@ -92,7 +100,7 @@ export class Hole<T> extends LazyPromise {
   collect(): Array<T> {
     // noinspection JSMismatchedCollectionQueryUpdate
     const results = [];
-    return this.pipe(data => {
+    return this.pipe((data) => {
       results.push(data);
     }).then(() => results);
   }

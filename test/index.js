@@ -327,10 +327,13 @@ parallel('Hole', function () {
           await timeout(Math.random() * 100);
           return n * 10;
         })
-        .pipe(n => n >= 40 ? n : null)
+        .pipe(n => {
+          return n >= 40 ? n : null;
+        })
         .collect();
     assert.deepStrictEqual(actual, expect);
   });
+
 });
 
 function timeout(ms) {
@@ -345,4 +348,38 @@ function createReadable(size) {
     },
     objectMode: true,
   });
+}
+
+// noinspection JSUnusedLocalSymbols
+function forFlowTypesCheck() {
+
+  hole('1')
+      .pipe(str => {
+        // noinspection BadExpressionStatementJS $ExpectError
+        (str: number);
+        return str;
+      })
+      .pipe(str => str + '0')
+      .pipe(str => str + '0')
+      .pipe(str => {
+        // noinspection BadExpressionStatementJS
+        (str: string);
+        return Number(str);
+      })
+      .pipe(n => {
+        // noinspection BadExpressionStatementJS
+        (n: number);
+        return n * n;
+      });
+
+  fromArray([2,3,4])
+      .pipe(num => num >= 3 ? num : null)
+      .pipe(num => {
+        // noinspection BadExpressionStatementJS
+        (num: number);
+        return num;
+      })
+      .pipe(num => 10 * num)
+      .collect();
+
 }
