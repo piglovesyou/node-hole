@@ -1,5 +1,7 @@
 # Hole [![Build Status](https://travis-ci.org/piglovesyou/node-hole.svg?branch=master)](https://travis-ci.org/piglovesyou/node-hole)
-Async friendly, stream-based task consuming utility for large amounts of data in Node.js.
+Async friendly, stream-based task consuming utility for Node.js.
+
+
 
 # Concept
 After years, it has been more important to write less-state code for me and naturally it has become more data-driven/functional style. But that and async programming are not always a good match. On one hand when you process too many async tasks at once, `await Promise.all(promises100000)` for example, you'd end up with error messages such as `process out of memory`, `socket hang up`, `ETIMEDOUT` or `ECONNRESET`. On the other hand, it's not efficient at all when you process whole data one by one in sequence. Reactive Extensions might be a solution though, I didn't want to [tune timer functions](https://github.com/ReactiveX/RxJava/wiki/Backpressure#useful-operators-that-avoid-the-need-for-backpressure) for the problem; all I want is just to set **limit number of parallel execution** and finish a task at the best speed.
@@ -8,45 +10,53 @@ Then Node Stream object mode with beautiful backpressuring mechanism appears. Ob
 
 Node Hole offers a fun, easy and efficient way of parallel data consuming by wrapping solid Node Stream implementation with async/promise friendly API.
 
+
+
 # Usage
 To install `hole` in your project, run:
 
 ```bash
-$ npm install hole
+$ npm install -S hole
 ```
 
-then utilize it like below:
+... then utilize it like below. Suppose there is a blog post API where `GET /posts/:id` to get post detail JSON and `GET /posts?page=1` for list of post summaries. Let's say we want to **store post details** of the latest 3 pages into local DB.
 
 ```javascript
-// Let's say we want to save all post details into a local search index.
-
-await hole(await getPageSize())                 // Start with fetching page size of whole posts
-    .pipe(pageSize => _.range(1, pageSize + 1)) // Create pages array like [1, 2, 3, 4, ...]
-    .split()                                    // For every page
-    .pipe(page => getPosts(page))               // (async) Get a post list
-    .split()                                    // For every post
-    .pipe(post => getPostDetail(post.id), 2)    // (async) Get a detail of post, with maximum parallel request of 2
-    .pipe(detail => saveToSearchIndex(detail))  // (async) And save the detail
-    .catch(err => console.log(err));            // On any error in the middle, it stops stream
-                                                // with an error that is able to catch
-console.log('done.');
+await fromArray([1, 2, 3])                      // Start with pages array
+    .pipe(page => getPosts(page))               // (parallel async) Get list of posts for a page
+    .split()                                    // Split the array into pieces
+    .pipe(post => getPostDetail(post.id), 3)    // (parallel async) Get a detail of post, with maximum parallel request of 3
+    .pipe(detail => saveToLocalDB(detail))      // (parallel async) Save the detail to local DB
+    .catch(err => console.log(err));            // On any error occurs in the middle, stop the whole process and catch the error in here
+console.log('All done :)');
 ```
 
-# API 
-* Exported functions
-    * [`hole(object: any): Hole`](#holeobject-any-hole)
-    * [`fromArray(array: Array<any>): Hole`](#fromarrayarray-arrayany-hole)
-    * [`fromStream(readable: ReadableStream): Hole`](#fromstreamreadable-readablestream-hole)
-* Chaining functions of `Hole`
-    * [`.pipe(processor: (any) => any, opts?: {highWaterMark?: number}): Hole`](#pipeprocessor-any--any-opts-highwatermark-number-hole)
-    * [`.pipe(processor: (any) => Promise<any>, opts?: {maxParallel?: number, highWaterMark?: number} | number): Hole`](#pipeprocessor-any--promiseany-opts-maxparallel-number-highwatermark-number--number-hole)
-    * [`.pipe(processor: Transform, opts?: {highWaterMark?: number}): Hole`](#pipeprocessor-transform-opts-highwatermark-number-hole)
-    * [`.split(): Hole`](#split-hole)
-    * [`.concat(size: number): Hole`](#concatsize-number-hole)
-    * [`.collect(): Promise<Array<any>>`](#collect-promisearrayany)
 
-### `hole(object: any): Hole`
-A function to start stream with any kind of a single JavaScript object.
+
+# API
+* Exported functions
+    * [`hole(object)`](#holeobject)
+    * [`fromArray(array)`](#fromarrayarray)
+    * [`fromStream(readable)`](#fromstreamreadable)
+* Chaining functions of `Hole` instance
+    * [`.pipe(processor, opts?)`](#pipeprocessor-opts)
+    * [`.pipe(transformer, opts?)`](#pipetransformer-opts)
+    * [`.split()`](#split)
+    * [`.concat(size)`](#concatsize)
+    * [`.collect()`](#collect)
+* Other types
+    * [`Hole`](#hole)
+    * [`PipeOption`](#pipeoption)
+
+All methods are typed by [Flow](https://flow.org/en/).
+
+
+
+### `hole(object)`
+
+Typed as `hole<T>(object: T): Hole<T>`.
+
+A function to start stream with a single JavaScript object of any kind.
 
 Example:
 ```javascript
@@ -58,7 +68,12 @@ await hole(998)
     .pipe(console.log)  // 1000
 ```
 
-### `fromArray(array: Array<any>): Hole`
+
+
+### `fromArray(array)`
+
+Typed as `fromArray<T>(Array<T>): Hole<T>`.
+
 A function to start stream with fixed multiple objects with an array.
 
 Example:
@@ -74,7 +89,10 @@ await fromArray([1, 2, 3, 4, 5])
                         // 50
 ```
 
-### `fromStream(readable: ReadableStream): Hole`
+
+
+### `fromStream(readable)`
+
 A function to start stream with an native Node readable stream.
 
 Example:
@@ -94,12 +112,15 @@ import csv2 from 'csv2';
                           // ...
 ```
 
-Hole extends [`LazyPromise`](https://github.com/then/lazy-promise) that starts streaming when `.then()` or `.catch()` is called. Other extended functions are listed below.
 
-### `.pipe(processor: (any) => any, opts?: {highWaterMark?: number}): Hole`
-The function "processor" gets data passed by the previous processor. The returned value is passed to the next.
 
-If it returns `null` or `undefined`, that means it **filters out the data** that will not be used any more.
+### `.pipe(processor, opts)`
+
+Typed as `pipe<U>(T => U, PipeOption?): Hole<U>`.
+
+When the `processor` is a synchronous function, it simply gets a value from the previous and passes processed value to the next.
+
+If it returns `null` or `undefined`, that means it **filters out the data** that is not used any more.
 
 Example:
 ```javascript
@@ -112,7 +133,7 @@ await fromArray([1, 2, 3, 4, 5])
                       // 5
 ```
 
-Note that a processor function will be called with a transform's `this` context: you can use `.push(data)` as usual in `transform()` function.
+Note that a processor function will be called with a transform's `this` context: you also can use `.push(data)` as usual in `transform()` function.
 
 Example:
 
@@ -130,15 +151,9 @@ await hole(5)
                         // 1
 ```
 
-### `.pipe(processor: (any) => Promise<any>, opts?: {maxParallel?: number, highWaterMark?: number} | number): Hole`
-When a processor returns a promise object, its **resolved value** will be passed to the next processor.
+When the `processor` returns a promise, it's similar but resolved value will be passed to the next.
 
-Also, it accepts an option. If it's an object, 2 properties are acceptable. If it's a number, it'll be passed as `maxParallel`.
-
-| Option property       | Default value | Meaning  |
-| ------------- | ------------- | ----- |
-| maxParallel      | 5 | Maximum number of parallel execution of process |
-| highWaterMark    | 16 | Maximum number of buffer that will be consumed by processor. [Read more](https://nodejs.org/api/stream.html#stream_writable_writablehighwatermark)      |
+`pipe<U>(T => Promise<U>, PipeOption): Hole<U>`
 
 Example:
 ```javascript
@@ -154,18 +169,33 @@ await fromArray([1, 2, 3, 4])
                                           // Excepteur sint...
 ```
 
-### `.pipe(processor: Transform, opts?: {highWaterMark?: number}): Hole`
-Also `.pipe()` accepts Node native Transformer object where you can utilize such as `csv2` and ``.
 
-[Example:](#fromstreamreadable-readablestream-hole)
 
-### `.split(): Hole`
-It splits an array that a previous process returns so the next process can handle each element of the array.
+### `.pipe(transformer, opts)`
 
-[Example:](#usage)
+Typed as `pipe<U>(stream$Writable, PipeOption): Hole<U>`.
 
-### `.concat(size: number): Hole`
-It concatenates sequential data to be size of array. It is useful to post multiple data at once in the way that [Elasticsearch Bulk API](https://www.elastic.co/guide/en/elasticsearch/reference/6.2/docs-bulk.html) does.
+Also `.pipe()` accepts Node native Transformer where you can utilize [`csv2`](https://www.npmjs.com/package/csv2) etc.
+
+[Example](#fromstreamreadable)
+
+
+
+### `.split()`
+
+Typed as `split(): Hole<$ElementType<T, number>>`.
+
+*Previous value should be array.* It splits the array so the next process can handle each piece of it.
+
+[Example](#usage)
+
+
+
+### `.concat(size)`
+
+Typed as `concat(number): Hole<Array<T>>`.
+
+It concatenates sequential data to be specified size of array. This is useful when you post array data at once in the way that [Elasticsearch Bulk API does](https://www.elastic.co/guide/en/elasticsearch/reference/6.2/docs-bulk.html).
 
 Example:
 ```javascript
@@ -176,9 +206,13 @@ await fromArray([1, 2, 3, 4, 5])
                         // [ 5 ]
 ```
 
-### `.collect(): Promise<Array<any>>`
 
-It collects all data that the previous process returns and gives you an array. Note that, when number of data gets a lot, it might oppresse room of memory.
+
+### `.collect()`
+
+`collect(): Promise<Array<T>>`
+
+It collects all data that the previous process returns and gives you an array. Note that, when number of data is enormous, the collected array may oppresse room of your memory.
 
 Example:
 ```javascript
@@ -187,6 +221,35 @@ const results = await fromArray([1, 2, 3, 4, 5])
     .collect();
 console.log(results); // [10, 20, 30, 40, 50]
 ```
+
+
+
+### `Hole`
+
+The core class that this package exports.
+
+Hole extends [`LazyPromise`](https://github.com/then/lazy-promise) that starts streaming when `.then()` or `.catch()` is called. Other extended functions are listed below.
+
+
+### `PipeOption`
+
+```javascript
+type PipeOption =
+  | {
+      maxParallel: number,
+      highWaterMark: number,
+    }
+  | number;
+```
+
+If it's a number, it is treated as a `maxParallel` value.
+
+| Option property       | Default value |  Valid when first argument of `.pipe()` is | Meaning   |
+| --------------------- | ------------- | --------- | ----------- |
+| maxParallel           | 5             | Async function | Maximum number of parallel execution of process |
+| highWaterMark         | 16            | Transformer, Sync and async function | Maximum number of buffer that will be consumed by processor. [Read more](https://nodejs.org/api/stream.html#stream_writable_writablehighwatermark)      |
+
+
 
 # License
 
