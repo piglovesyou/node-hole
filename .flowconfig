@@ -1,4 +1,5 @@
 [ignore]
+.*/_.*?.js
 
 [include]
 
@@ -7,3 +8,4 @@
 [lints]
 
 [options]
+suppress_comment=\\(.\\|\n\\)*\\$ExpectError

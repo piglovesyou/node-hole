@@ -6,31 +6,21 @@ import isStream from 'is-stream';
 import {Transform, Writable} from 'stream';
 import LazyPromise from 'lazy-promise';
 import HoleTransform from './transform';
+import type {Processor, ProcessorInfo, ProcessorOption} from './types';
 
-export type Processor = ((data: any) => (any | Promise<any>))
-    | stream$Transform
-    | stream$Writable;
-
-export type ProcessorOption = {
-  maxParallel?: number,
-  highWaterMark?: number,
-};
-
-export type ProcessorInfo = [Processor, ProcessorOption];
-
-export function fromStream(readable: stream$Readable): Hole {
+export function fromStream(readable: stream$Readable): Hole<any> {
   return new Hole(readable);
 }
 
-export function fromArray(array: Array<any>): Hole {
+export function fromArray<T>(array: Array<T>): Hole<T> {
   return fromStream(streamify(array));
 }
 
-export default function hole(obj: any): Hole {
+export default function hole<T>(obj: T): Hole<T> {
   return fromArray([obj]);
 }
 
-export class Hole extends LazyPromise {
+export class Hole<T> extends LazyPromise {
   _readable: stream$Readable;
   _procInfoArray: Array<ProcessorInfo>;
 
@@ -40,14 +30,21 @@ export class Hole extends LazyPromise {
     this._procInfoArray = [];
   }
 
-  pipe(p: Processor, opts?: ProcessorOption | number): Hole {
-    const options = typeof opts === 'number' ? {maxParallel: opts}
-        : opts || {};
+  pipe<U, V>(p: Processor<T, U>, opts?: (ProcessorOption | number)): $Call<
+      & (stream$Readable => Hole<any>) // Cannot type
+      & (stream$Writable => Hole<any>) // Cannot type
+      & (Function => $Call<
+        & (Promise<?V> => Hole<V>)
+        & (?V => Hole<V>),
+        U
+      >),
+      Processor<T, U>> {
+    const options: ProcessorOption = typeof opts === 'number' ? {maxParallel: opts} : opts || {};
     this._procInfoArray = [...this._procInfoArray, [p, options]];
-    return this;
+    return (this: any);
   }
 
-  split() {
+  split(): Hole<$ElementType<T, number>> {
     const p = new Transform({
       objectMode: true,
       transform(chunks, enc, callback) {
@@ -74,10 +71,10 @@ export class Hole extends LazyPromise {
       }
     });
     this._procInfoArray = [...this._procInfoArray, [p, {}]];
-    return this;
+    return (this: any);
   }
 
-  concat(size: number) {
+  concat(size: number): Hole<Array<T>> {
     let buffered = [];
     const p = new Transform({
       transform(chunk, enc, callback) {
@@ -97,12 +94,13 @@ export class Hole extends LazyPromise {
       objectMode: true,
     });
     this._procInfoArray = [...this._procInfoArray, [p, {}]];
-    return this;
+    return ((this: any): Hole<Array<T>>);
   }
 
-  collect() {
+  collect(): Array<T> {
+    // noinspection JSMismatchedCollectionQueryUpdate
     const results = [];
-    return this.pipe(data => {
+    return this.pipe((data) => {
       results.push(data);
     }).then(() => results);
   }
@@ -138,4 +136,3 @@ function start(resolve: Function, reject: Function) {
     return new HoleTransform(fn, opts);
   }
 }
-

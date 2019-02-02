@@ -13,7 +13,7 @@ parallel('Hole', function () {
   it('hole(obj) takes object', async function () {
     const expect = {ohh: 'yeah'};
     let actual = null;
-    await hole({})
+    await hole({ohh: 'ohh'})
         .pipe(obj => {
           obj.ohh = 'yeah';
           return obj;
@@ -172,7 +172,7 @@ parallel('Hole', function () {
   it('.split() splits an passed array', async function () {
     const expect = ['a', 'b', 'c'];
     let actual = [];
-    await hole({})
+    await hole({items: undefined})
         .pipe(async obj => {
           obj.items = ['a', 'b', 'c'];
           return obj;
@@ -345,4 +345,48 @@ function createReadable(size) {
     },
     objectMode: true,
   });
+}
+
+// noinspection JSUnusedLocalSymbols
+function forFlowTypesCheck() {
+
+  hole('1')
+      .pipe(str => {
+        // noinspection BadExpressionStatementJS $ExpectError
+        (str: number);
+        return str;
+      })
+      .pipe(str => str + '0')
+      .pipe(str => str + '0')
+      .pipe(str => {
+        // noinspection BadExpressionStatementJS
+        (str: string);
+        return Number(str);
+      })
+      .pipe(n => {
+        // noinspection BadExpressionStatementJS
+        (n: number);
+        return n * n;
+      });
+
+  fromArray([2,3,4])
+      .pipe(num => num >= 3 ? num : null)
+      .pipe(num => {
+        // noinspection BadExpressionStatementJS
+        (num: number);
+        return num;
+      })
+      .pipe(num => 10 * num)
+      .collect();
+
+  fromArray([2,3,4])
+      .pipe(n => {
+        return [n, n * 10, n *100]
+      })
+      .split()
+      .pipe(n => {
+        // noinspection BadExpressionStatementJS $ExpectError
+        (n: string);
+      });
+
 }
