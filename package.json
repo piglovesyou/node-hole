@@ -16,7 +16,7 @@
   "scripts": {
     "check": "flow check",
     "test": "npm run check && mocha --require @babel/register",
-    "build": "babel --out-dir lib src && flow-copy-source src lib",
+    "build": "rimraf ./lib && babel --out-dir lib src && flow-copy-source src lib",
     "prepare": "flow-typed install && npm run build",
     "prepublishOnly": "npm test && npm run build"
   },
@@ -46,6 +46,7 @@
     "flow-typed": "^2.5.1",
     "mocha": "^6.0.0-1",
     "mocha.parallel": "^0.15.6",
+    "rimraf": "^2.6.3",
     "split2": "^3.1.0"
   }
 }
