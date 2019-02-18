@@ -104,6 +104,13 @@ export class Hole<T> extends LazyPromise {
       results.push(data);
     }).then(() => results);
   }
+
+  collectSet(): Promise<Set<T>> {
+    const results = new Set();
+    return this.pipe((data) => {
+      results.add(data);
+    }).then(() => results);
+  }
 }
 
 function start(resolve: Function, reject: Function) {

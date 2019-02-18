@@ -315,7 +315,7 @@ parallel('Hole', function () {
     assert.deepStrictEqual(actual, expect);
   });
 
-  it('.collect() returns Promise<Array<any>> of value returned by last process', async function () {
+  it('.collect() returns a promised array of previous', async function () {
     const expect = [40, 50, 60, 70, 80, 90, 100];
     const actual = await fromArray([...Array(10)].map((_, i) => i))
         .pipe(async n => {
@@ -329,6 +329,14 @@ parallel('Hole', function () {
         })
         .pipe(n => n >= 40 ? n : null)
         .collect();
+    assert.deepStrictEqual(actual, expect);
+  });
+
+  it('.collect() returns a promised set of previous', async function () {
+    const expect = new Set([2, 3, 4, 5]);
+    const actual = await fromArray([2, 3, 3, 4, 4, 5, 5, 5, 5])
+        .pipe(n => Promise.resolve(n))
+        .collectSet();
     assert.deepStrictEqual(actual, expect);
   });
 });
@@ -392,5 +400,6 @@ async function forFlowTypesCheck() {
       })
       .collect();
 
+  // noinspection BadExpressionStatementJS
   (array: Array<number>);
 }
