@@ -1,7 +1,6 @@
-// @flow
+import {Transform, Writable} from 'stream';
 
-// export type ProcessorValue<U> = U | Promise<U> | null | void | Promise<null> | Promise<void> ;
-export type Processor<T, U> = ((param0: T) => U | undefined) | stream$Transform | stream$Writable;
+export type Processor<T, U> = ((param0: T) => U | void) | Transform | Writable;
 export interface ProcessorOption {
   maxParallel?: number;
   highWaterMark?: number;

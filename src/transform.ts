@@ -1,4 +1,3 @@
-// @flow
 import ParallelTransform from 'parallel-transform-stream';
 import { Processor, ProcessorOption } from './types';
 
@@ -21,8 +20,7 @@ export class HoleTransform extends ParallelTransform {
     this.asyncFn = asyncFn;
   }
 
-  // noinspection JSUnusedGlobalSymbols
-  private parallelTransform(data: any, enc: any, callback: any) {
+  _parallelTransform(data: any, enc: any, callback: any) {
     this.consumingLength++;
     try {
       const rv = this.asyncFn(data);

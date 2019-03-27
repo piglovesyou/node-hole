@@ -1,12 +1,11 @@
-// @flow
 import assert from 'assert';
 import stream from 'stream';
 import fs from 'fs';
-import { hole, fromArray, fromStream } from '../src/index';
+import hole, { Hole, fromArray, fromStream } from '../src';
 import split2 from 'split2';
 import parallel from 'mocha.parallel';
 
-parallel('Hole', function() {
+parallel('Hole', function(this: any) {
   this.timeout(30 * 1000);
 
   it('hole(obj) takes object', async function() {
@@ -25,7 +24,7 @@ parallel('Hole', function() {
 
   it('fromArray(array) takes array', async function() {
     const expect = ['a', 'b', 'c'];
-    const actual = [];
+    const actual: string[] = [];
     await fromArray(['a', 'b', 'c']).pipe((letter) => {
       actual.push(letter);
     });
@@ -34,7 +33,7 @@ parallel('Hole', function() {
 
   it('fromStream(readable) takes readable', async function() {
     const expect = [0, 1, 2, 3, 4];
-    const actual = [];
+    const actual: string[] = [];
     let i = 0;
     await fromStream(
       new stream.Readable({
@@ -53,7 +52,7 @@ parallel('Hole', function() {
   it('.pipe(fn) transforms data', async function() {
     const expect = [{ upper: 'A' }, { upper: 'B' }, { upper: 'C' }, { upper: 'D' }, { upper: 'E' }];
 
-    const actual = [];
+    const actual: Array<{upper: string}> = [];
     await fromArray(['a', 'b', 'c', 'd', 'e'])
       .pipe((letter) => letter.toUpperCase())
       .pipe((upper) => actual.push({ upper }));
@@ -80,8 +79,8 @@ parallel('Hole', function() {
 
   it('.pipe(async fn) keeps order', async function() {
     const expect = ['A', 'B', 'C', 'D', 'E'];
-    const actualUnordered = [];
-    const actualOrdered = [];
+    const actualUnordered: string[] = [];
+    const actualOrdered: string[] = [];
     await fromArray(['a', 'b', 'c', 'd', 'e'])
       .pipe((letter) => letter.toUpperCase())
       .pipe(async (letter) => {
@@ -98,7 +97,7 @@ parallel('Hole', function() {
 
   it('.pipe(transform) accepts native transform', async function() {
     const expect = ['A', 'B', 'C', 'D', 'E'];
-    const actual = [];
+    const actual:string[] = [];
     const t = new stream.Transform({
       transform: function(data, enc, callback) {
         callback(null, data.toUpperCase());
@@ -116,7 +115,7 @@ parallel('Hole', function() {
 
   it('.pipe(transform) accepts third party transform', async function() {
     const expect = '  "name": "hole",';
-    const lines = [];
+    const lines: string[] = [];
     await fromStream(fs.createReadStream('./package.json'))
       .pipe(split2())
       .pipe((line) => {
@@ -127,7 +126,7 @@ parallel('Hole', function() {
 
   it('.pipe(fn) filters out values by returning null or undefined', async function() {
     const expect = [4, 5, 6];
-    const actual = [];
+    const actual: number[] = [];
     await fromArray([1, 2, 3, 4, 5, 6, 7, 8])
       .pipe(function(n) {
         if (4 <= n) {
@@ -148,6 +147,7 @@ parallel('Hole', function() {
   it('last .pipe(fn) does not store data in readable buffer even if it returns something', async function() {
     const expect = 999;
     let actual = null;
+    // @ts-ignore
     const largeArray = [...Array(expect).keys()];
 
     await fromArray(largeArray)
@@ -164,9 +164,11 @@ parallel('Hole', function() {
 
   it('.split() splits an passed array', async function() {
     const expect = ['a', 'b', 'c'];
-    let actual = [];
-    await hole({ items: undefined })
+    let actual: string[] = [];
+    const arg: {items: string[]} = { items: [] };
+    await hole(arg)
       .pipe(async (obj) => {
+        // @ts-ignore
         obj.items = ['a', 'b', 'c'];
         return obj;
       })
@@ -227,7 +229,7 @@ parallel('Hole', function() {
 
   it('.pipe() accepts either stream option or maxParallel number', async function() {
     const expect = 500;
-    let actual = null;
+    let actual = 0;
     const r = createReadable(1000);
     await fromStream(r)
       .pipe(
@@ -260,8 +262,8 @@ parallel('Hole', function() {
     ];
 
     const expect2 = [100, 200];
-    const actual1 = [];
-    const actual2 = [];
+    const actual1: number[][] = [];
+    const actual2: number[] = [];
     await fromStream(createReadable(23))
       .pipe((n) => n * 10)
       .concat(5)
@@ -305,7 +307,7 @@ parallel('Hole', function() {
 
   it('allows .push(data) inside a processor that runs a transformer context', async function() {
     const expect = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-    const actual = [];
+    const actual: number[] = [];
     await hole({})
       .pipe(async function() {
         for (let i = 0; i < 10; i++) {
@@ -344,11 +346,11 @@ parallel('Hole', function() {
   });
 });
 
-function timeout(ms) {
+function timeout(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function createReadable(size) {
+function createReadable(size: number) {
   let i = 0;
   return new stream.Readable({
     read: function() {
@@ -359,49 +361,48 @@ function createReadable(size) {
 }
 
 // noinspection JSUnusedLocalSymbols
-async function forFlowTypesCheck() {
-  await hole('1')
-    .pipe((str) => {
-      // noinspection BadExpressionStatementJS $ExpectError
-      str as number;
-      return str;
-    })
-    .pipe((str) => str + '0')
-    .pipe((str) => str + '0')
-    .pipe((str) => {
-      // noinspection BadExpressionStatementJS
-      str as string;
-      return Number(str);
-    })
-    .pipe((n) => {
-      // noinspection BadExpressionStatementJS
-      n as number;
-      return n * n;
-    });
-
-  await fromArray([2, 3, 4])
-    .pipe((num) => (num >= 3 ? num : null))
-    .pipe((num) => {
-      // noinspection BadExpressionStatementJS
-      num as number;
-      return num;
-    })
-    .pipe((num) => 10 * num)
-    .collect();
-
-  const array = await fromArray([2, 3, 4])
-    .pipe((n) => {
-      return [n, n * 10, n * 100];
-    })
-    .split()
-    .pipe((n) => {
-      // noinspection BadExpressionStatementJS $ExpectError
-      n as string;
-
-      return n;
-    })
-    .collect();
-
-  // noinspection BadExpressionStatementJS
-  array as number[];
-}
+// async function forFlowTypesCheck() {
+//   await hole('1')
+//     .pipe((str) => {
+//       str as number;
+//       return str;
+//     })
+//     .pipe((str) => str + '0')
+//     .pipe((str) => str + '0')
+//     .pipe((str) => {
+//       // noinspection BadExpressionStatementJS
+//       str as string;
+//       return Number(str);
+//     })
+//     .pipe((n) => {
+//       // noinspection BadExpressionStatementJS
+//       n as number;
+//       return n * n;
+//     });
+//
+//   await fromArray([2, 3, 4])
+//     .pipe((num) => (num >= 3 ? num : null))
+//     .pipe((num) => {
+//       // noinspection BadExpressionStatementJS
+//       num as number;
+//       return num;
+//     })
+//     .pipe((num) => 10 * num)
+//     .collect();
+//
+//   const array = await fromArray([2, 3, 4])
+//     .pipe((n) => {
+//       return [n, n * 10, n * 100];
+//     })
+//     .split()
+//     .pipe((n) => {
+//       // noinspection BadExpressionStatementJS $ExpectError
+//       n as string;
+//
+//       return n;
+//     })
+//     .collect();
+//
+//   // noinspection BadExpressionStatementJS
+//   array as number[];
+// }

@@ -2,12 +2,12 @@
 import pump from 'pump';
 import streamify from 'stream-array';
 import isStream from 'is-stream';
-import { Transform, Writable } from 'stream';
+import { Readable, Transform, Writable } from 'stream';
 import LazyPromise from 'lazy-promise';
 import { HoleTransform } from './transform';
 import { Processor, ProcessorInfo, ProcessorOption } from './types';
 
-export function fromStream(readable: stream$Readable): Hole<any> {
+export function fromStream(readable: Readable): Hole<any> {
   return new Hole(readable);
 }
 
@@ -19,53 +19,56 @@ export default function hole<T>(obj: T): Hole<T> {
   return fromArray([obj]);
 }
 
-export class Hole<T> extends LazyPromise {
-  private readonly readable: stream$Readable;
-  private readonly procInfoArray: ProcessorInfo[];
+interface AsyncFunction {
+  addClickListener(onclick: (this: void, e: Event) => void): void;
+}
 
-  constructor(readable: stream$Readable) {
+type ArrayElement<ArrayType> = ArrayType extends (infer ElementType)[] ? ElementType : never;
+
+export class Hole<T> extends LazyPromise<T> {
+  private readonly readable: Readable;
+  private procInfoArray: ProcessorInfo[];
+
+  constructor(readable: Readable) {
     super(start);
     this.readable = readable;
     this.procInfoArray = [];
   }
 
-  public pipe<U, V>(
-    p: Processor<T, U>,
-    opts?: ProcessorOption | number,
-  ): $Call<
-    ((param0: stream$Readable) => Hole<any>) &
-      ((param0: stream$Writable) => Hole<any>) &
-      ((
-        param0: Function,
-      ) => $Call<((param0: Promise<V | undefined>) => Hole<V>) & ((param0: V | undefined) => Hole<V>), U>),
-    Processor<T, U>
-  > {
+  public pipe(p: Readable): Hole<any>;
+  public pipe(p: Writable): Hole<any>;
+  public pipe<U>(p: (this: Transform, arg: T) => Promise<U>, opts?: ProcessorOption | number): Hole<Exclude<NonNullable<U>, void>>;
+  public pipe<U>(p: (this: Transform, arg: T) => U , opts?: ProcessorOption | number): Hole<Exclude<NonNullable<U>, void>>;
+  public pipe(p: any, opts?: any): any {
     const options: ProcessorOption = typeof opts === 'number' ? { maxParallel: opts } : opts || {};
     this.procInfoArray = [...this.procInfoArray, [p, options]];
     return this as any;
   }
 
-  public split(): Hole<T[number]> {
+  public split<U = ArrayElement<T>>(): Hole<U> {
     const p = new Transform({
       objectMode: true,
-      transform(chunks, enc, callback) {
+      transform: function (chunks, enc, callback) {
         if (!Array.isArray(chunks)) {
           throw new Error('.split() must receive an array from a previous function.');
         }
         push.call(this, callback, chunks, 0);
 
-        function push(callback, chunks, curr) {
+        function push(callback: any, chunks: any, curr: number) {
           if (chunks[curr] === undefined) {
             callback();
             return;
           }
+          // @ts-ignore
           const bufferAvailable = this.push(chunks[curr]);
           if (bufferAvailable) {
+            // @ts-ignore
             push.call(this, callback, chunks, curr + 1);
             return;
           }
           // Avoid synchronous pushing over capacity of readable buffer
           setImmediate(() => {
+            // @ts-ignore
             push.call(this, callback, chunks, curr + 1);
           });
         }
@@ -77,7 +80,7 @@ export class Hole<T> extends LazyPromise {
   }
 
   public concat(size: number): Hole<T[]> {
-    let buffered = [];
+    let buffered: T[] = [];
     const p = new Transform({
       transform(chunk, enc, callback) {
         buffered = [...buffered, chunk];
@@ -102,7 +105,7 @@ export class Hole<T> extends LazyPromise {
 
   public collect(): Promise<T[]> {
     // noinspection JSMismatchedCollectionQueryUpdate
-    const results = [];
+    const results: T[] = [];
     return this.pipe((data) => {
       results.push(data);
     }).then(() => results);
@@ -117,9 +120,11 @@ export class Hole<T> extends LazyPromise {
 }
 
 function start(resolve: Function, reject: Function) {
+  // @ts-ignore
   if (this.procInfoArray.length <= 0) {
     throw new Error('Hole requires at least one ".pipe(fn)" call.');
   }
+  // @ts-ignore
   const transforms = this.procInfoArray.map(toStream);
   const voidWriter = new Writable({
     objectMode: true,
@@ -128,11 +133,12 @@ function start(resolve: Function, reject: Function) {
     },
   });
 
+  // @ts-ignore
   const streams = [this.readable, ...transforms, voidWriter];
 
   pump.apply(null, [
     ...streams,
-    (error) => {
+    (error: any) => {
       if (error) {
         reject(error);
       } else {
@@ -141,7 +147,7 @@ function start(resolve: Function, reject: Function) {
     },
   ]);
 
-  function toStream([fn, opts]) {
+  function toStream([fn, opts]: [any, any]) {
     if (isStream(fn)) return fn;
 
     return new HoleTransform(fn, opts);
