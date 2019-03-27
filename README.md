@@ -254,3 +254,4 @@ If it's a number, it is treated as a `maxParallel` value.
 # License
 
 MIT
+

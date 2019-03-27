@@ -12,24 +12,22 @@
   ],
   "homepage": "https://github.com/piglovesyou/node-hole",
   "bugs": "https://github.com/piglovesyou/node-hole/issues",
-  "main": "lib/index.js",
-  "types": "lib/index.d.ts",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "scripts": {
-    "check": "flow check",
-    "test": "npm run check && mocha --require ts-node/register",
-    "build": "rimraf ./lib && tsc",
+    "test": "ts-mocha -p ./tsconfig.json test/**/*.ts",
+    "build": "rimraf ./dist && tsc && rimraf ./dist/test",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run build"
   },
   "files": [
-    "lib",
+    "dist",
     "package-lock.json"
   ],
   "author": "thepiglovesyou@gmail.com",
   "repository": "git@github.com:piglovesyou/node-hole.git",
   "license": "MIT",
   "dependencies": {
-    "flow2ts": "^1.3.0",
     "is-stream": "^1.1.0",
     "lazy-promise": "^4.0.0",
     "parallel-transform-stream": "^1.0.1",
@@ -49,6 +47,9 @@
     "mocha.parallel": "^0.15.6",
     "rimraf": "^2.6.3",
     "split2": "^3.1.0",
+    "ts-mocha": "^6.0.0",
+    "ts-node": "^8.0.3",
+    "tsconfig-paths": "^3.8.0",
     "typescript": "^3.3.4000"
   }
 }

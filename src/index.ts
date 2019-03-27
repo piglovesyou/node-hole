@@ -1,4 +1,3 @@
-// @flow
 import pump from 'pump';
 import streamify from 'stream-array';
 import isStream from 'is-stream';

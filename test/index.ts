@@ -1,3 +1,5 @@
+/// <reference path="../node_modules/@types/mocha/index.d.ts" />
+
 import assert from 'assert';
 import stream from 'stream';
 import fs from 'fs';
@@ -359,50 +361,3 @@ function createReadable(size: number) {
     objectMode: true,
   });
 }
-
-// noinspection JSUnusedLocalSymbols
-// async function forFlowTypesCheck() {
-//   await hole('1')
-//     .pipe((str) => {
-//       str as number;
-//       return str;
-//     })
-//     .pipe((str) => str + '0')
-//     .pipe((str) => str + '0')
-//     .pipe((str) => {
-//       // noinspection BadExpressionStatementJS
-//       str as string;
-//       return Number(str);
-//     })
-//     .pipe((n) => {
-//       // noinspection BadExpressionStatementJS
-//       n as number;
-//       return n * n;
-//     });
-//
-//   await fromArray([2, 3, 4])
-//     .pipe((num) => (num >= 3 ? num : null))
-//     .pipe((num) => {
-//       // noinspection BadExpressionStatementJS
-//       num as number;
-//       return num;
-//     })
-//     .pipe((num) => 10 * num)
-//     .collect();
-//
-//   const array = await fromArray([2, 3, 4])
-//     .pipe((n) => {
-//       return [n, n * 10, n * 100];
-//     })
-//     .split()
-//     .pipe((n) => {
-//       // noinspection BadExpressionStatementJS $ExpectError
-//       n as string;
-//
-//       return n;
-//     })
-//     .collect();
-//
-//   // noinspection BadExpressionStatementJS
-//   array as number[];
-// }
