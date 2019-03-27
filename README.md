@@ -48,7 +48,7 @@ console.log('All done :)');
     * [`Hole`](#hole)
     * [`PipeOption`](#pipeoption)
 
-All methods are typed by [Flow](https://flow.org/en/).
+All methods are typed by [TypeScript](https://www.typescriptlang.org/).
 
 
 
@@ -173,7 +173,7 @@ await fromArray([1, 2, 3, 4])
 
 ### `.pipe(transformer, opts)`
 
-Typed as `pipe<U>(stream$Writable, PipeOption): Hole<U>`.
+Typed as `pipe<U>(Writable, PipeOption): Hole<U>`.
 
 Also `.pipe()` accepts Node native Transformer where you can utilize [`csv2`](https://www.npmjs.com/package/csv2) etc.
 
