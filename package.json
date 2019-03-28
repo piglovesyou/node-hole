@@ -12,16 +12,16 @@
   ],
   "homepage": "https://github.com/piglovesyou/node-hole",
   "bugs": "https://github.com/piglovesyou/node-hole/issues",
-  "main": "lib/index.js",
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
   "scripts": {
-    "check": "flow check",
-    "test": "npm run check && mocha --require @babel/register",
-    "build": "rimraf ./lib && babel --out-dir lib src && flow-copy-source src lib",
+    "test": "ts-mocha -p ./tsconfig.json test/**/*.ts",
+    "build": "rimraf ./dist && tsc && rimraf ./dist/test",
     "prepare": "npm run build",
     "prepublishOnly": "npm test && npm run build"
   },
   "files": [
-    "lib",
+    "dist",
     "package-lock.json"
   ],
   "author": "thepiglovesyou@gmail.com",
@@ -35,18 +35,21 @@
     "stream-array": "^1.1.2"
   },
   "devDependencies": {
-    "@babel/cli": "^7.2.3",
-    "@babel/core": "^7.3.3",
-    "@babel/plugin-proposal-object-rest-spread": "^7.3.1",
-    "@babel/preset-env": "^7.3.1",
-    "@babel/preset-flow": "^7.0.0",
-    "@babel/register": "^7.0.0",
-    "flow-bin": "^0.92.0",
-    "flow-copy-source": "^2.0.3",
-    "flow-typed": "^2.5.1",
+    "@types/is-stream": "^1.1.0",
+    "@types/mocha": "^5.2.6",
+    "@types/node": "^11.12.0",
+    "@types/pump": "^1.0.1",
+    "@types/rimraf": "^2.0.2",
+    "@types/split2": "^2.1.6",
+    "@types/stream-array": "^1.1.0",
+    "@types/typescript": "^2.0.0",
     "mocha": "^6.0.0",
     "mocha.parallel": "^0.15.6",
     "rimraf": "^2.6.3",
-    "split2": "^3.1.0"
+    "split2": "^3.1.0",
+    "ts-mocha": "^6.0.0",
+    "ts-node": "^8.0.3",
+    "tsconfig-paths": "^3.8.0",
+    "typescript": "^3.3.4000"
   }
 }
