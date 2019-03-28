@@ -4,7 +4,7 @@ import isStream from 'is-stream';
 import { Readable, Transform, Writable } from 'stream';
 import LazyPromise from 'lazy-promise';
 import { HoleTransform } from './transform';
-import { Processor, ProcessorInfo, ProcessorOption } from './types';
+import { ProcessorInfo, ProcessorOption } from './types';
 
 export function fromStream(readable: Readable): Hole<any> {
   return new Hole(readable);
@@ -23,6 +23,8 @@ interface AsyncFunction {
 }
 
 type ArrayElement<ArrayType> = ArrayType extends (infer ElementType)[] ? ElementType : never;
+type ThenArg<T> = T extends Promise<infer U> ? U : T;
+type Exists<T> = Exclude<NonNullable<T>, void>;
 
 export class Hole<T> extends LazyPromise<T> {
   private readonly readable: Readable;
@@ -36,8 +38,8 @@ export class Hole<T> extends LazyPromise<T> {
 
   public pipe(p: Readable): Hole<any>;
   public pipe(p: Writable): Hole<any>;
-  public pipe<U>(p: (this: Transform, arg: T) => Promise<U>, opts?: ProcessorOption | number): Hole<Exclude<NonNullable<U>, void>>;
-  public pipe<U>(p: (this: Transform, arg: T) => U , opts?: ProcessorOption | number): Hole<Exclude<NonNullable<U>, void>>;
+  public pipe<U>(p: (this: Transform, arg: T) => U , opts?: ProcessorOption | number): Hole<Exists<ThenArg<U>>>;
+
   public pipe(p: any, opts?: any): any {
     const options: ProcessorOption = typeof opts === 'number' ? { maxParallel: opts } : opts || {};
     this.procInfoArray = [...this.procInfoArray, [p, options]];
