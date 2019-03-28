@@ -18,10 +18,6 @@ export default function hole<T>(obj: T): Hole<T> {
   return fromArray([obj]);
 }
 
-interface AsyncFunction {
-  addClickListener(onclick: (this: void, e: Event) => void): void;
-}
-
 type ArrayElement<ArrayType> = ArrayType extends (infer ElementType)[] ? ElementType : never;
 type ThenArg<T> = T extends Promise<infer U> ? U : T;
 type Exists<T> = Exclude<NonNullable<T>, void>;
